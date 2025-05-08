@@ -6,12 +6,10 @@ return {
         "nvim-tree/nvim-web-devicons",
         "MunifTanjim/nui.nvim",
     },
-    config = function()
-        vim.keymap.set('n', '<C-n>', ':Neotree filesystem reveal left<CR>', {})
-    end,
     lazy = false, -- neo-tree will lazily load itself
       ---@module "neo-tree"
       ---@type neotree.Config?
       opts = {
+        vim.keymap.set('n', '<C-n>', ':Neotree filesystem reveal left<CR>', {})
       },
 }
