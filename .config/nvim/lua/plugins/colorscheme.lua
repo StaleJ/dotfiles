@@ -29,7 +29,14 @@ return {
                 dim_inactive = false,
                 transparent_mode = false,
             })
-            vim.cmd("colorscheme gruvbox")
+            -- vim.cmd("colorscheme gruvbox")
         end,
+    },
+    {
+        "Mofiqul/vscode.nvim",
+        config = function()
+            vim.o.background = 'dark'
+            vim.cmd.colorscheme "vscode"
+        end
     }
 }

@@ -2,7 +2,12 @@ return {
     {
         "mason-org/mason.nvim",
         config = function()
-            require("mason").setup()
+            require("mason").setup({
+                registries = {
+                    "github:mason-org/mason-registry",
+                    "github:Crashdummyy/mason-registry",
+                },
+            })
         end
     },
     {
@@ -15,12 +20,42 @@ return {
     },
     {
         "neovim/nvim-lspconfig",
+        dependencies = {
+            {
+                "seblyng/roslyn.nvim",
+                ft = { "cs" },
+            },
+        },
         config = function()
             vim.lsp.enable('lua_ls')
             vim.lsp.config('lua_ls', {
                 settings = {
                 }
             })
-        end
+            vim.lsp.enable('roslyn')
+            vim.lsp.config('roslyn', {
+                settings = {
+
+                }
+            })
+        end,
+        opts = {
+            inlay_hints = {
+                enabled = true
+            },
+            codelens = {
+                enabled = true
+            }
+        },
+    },
+    {
+        "seblyng/roslyn.nvim",
+        ft = "cs",
+        ---@module 'roslyn.config'
+        ---@type RoslynNvimConfig
+        opts = {
+            -- your configuration comes here; leave empty for default settings
+            -- NOTE: You must configure `cmd` in `config.cmd` unless you have installed via mason
+        }
     }
 }
