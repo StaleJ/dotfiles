@@ -6,10 +6,11 @@ return {
         "nvim-tree/nvim-web-devicons",
         "MunifTanjim/nui.nvim",
     },
-    lazy = false, -- neo-tree will lazily load itself
-      ---@module "neo-tree"
-      ---@type neotree.Config?
-      opts = {
-        vim.keymap.set('n', '<C-n>', ':Neotree filesystem reveal left<CR>', {})
-      },
+    lazy = false, -- load immediately
+    opts = {
+        close_if_last_window = true,
+    },
+    keys = {
+        { "<C-n>", ':Neotree filesystem left toggle<CR>' },
+    },
 }
