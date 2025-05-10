@@ -108,6 +108,7 @@ alias vim="nvim"
 alias lg='lazygit'
 alias py="python3"
 alias cpwd="pwd | tr -d '\n' | pbcopy && echo 'pwd copied to clipboard'"
+alias app="cd ~/git/horde/HordeApp/"
 export LANG=en_US.UTF-8
 
 # bun completions

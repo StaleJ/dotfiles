@@ -27,6 +27,12 @@ return {
             },
         },
         config = function()
+            -- Go to Type Definition
+            vim.keymap.set("n", "gy", vim.lsp.buf.type_definition, bufopts)
+            -- Go to Declaration
+            vim.keymap.set("n", "gD", vim.lsp.buf.declaration, bufopts)
+            -- **Go to Implementation**
+            vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
             vim.lsp.enable('lua_ls')
             vim.lsp.config('lua_ls', {
                 settings = {
