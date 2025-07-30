@@ -50,8 +50,8 @@ vim.keymap.set('i', '[', '[]<Left>', { noremap = true })
 vim.keymap.set('i', '"', '""<Left>', { noremap = true })
 vim.keymap.set('i', "'", "''<Left>", { noremap = true })
 
-vim.opt.spell = true
-vim.opt.spelllang = { "en_us", "nb" }
+vim.opt.spell = false
+vim.opt.spelllang = { "en_us" }
 
 -- Smart backspace: delete closing pair if immediately following opening pair
 vim.keymap.set('i', '<BS>', function()

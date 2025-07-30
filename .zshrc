@@ -92,7 +92,22 @@ source $ZSH/oh-my-zsh.sh
 # else
 #   export EDITOR='mvim'
 # fi
-
+# 
+dgrep() {
+  local depth=1 type=d
+  while [[ $1 == -* ]]; do
+    case $1 in
+      -d) depth=$2; shift 2 ;;
+      -t) type=$2;  shift 2 ;;
+      *) break ;;
+    esac
+  done
+  if [[ -z $1 ]]; then
+    echo "Usage: dgrep [-d <maxdepth>] [-t d|f] <pattern>"
+    return 1
+  fi
+  find . -maxdepth $depth -type $type | grep -i -- "$1"
+}
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
@@ -109,6 +124,7 @@ alias lg='lazygit'
 alias py="python3"
 alias cpwd="pwd | tr -d '\n' | pbcopy && echo 'pwd copied to clipboard'"
 alias app="cd ~/git/horde/HordeApp/"
+alias generate-user="/Users/stale/git/NameGenerator/publish/NameGenerator"
 export LANG=en_US.UTF-8
 
 # bun completions
