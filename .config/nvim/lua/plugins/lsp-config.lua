@@ -27,12 +27,23 @@ return {
             },
         },
         config = function()
-            -- Go to Type Definition
-            vim.keymap.set("n", "gy", vim.lsp.buf.type_definition, bufopts)
-            -- Go to Declaration
-            vim.keymap.set("n", "gD", vim.lsp.buf.declaration, bufopts)
-            -- **Go to Implementation**
-            vim.keymap.set("n", "gi", vim.lsp.buf.implementation, bufopts)
+            vim.api.nvim_create_autocmd('LspAttach', {
+                callback = function(args)
+                    local bufopts = { noremap = true, silent = true, buffer = args.buf }
+                    local map     = vim.keymap.set
+
+                    map('n', 'gy', vim.lsp.buf.type_definition, bufopts)
+                    map('n', 'gD', vim.lsp.buf.declaration, bufopts)
+                    map('n', 'gd', vim.lsp.buf.definition, bufopts)
+                    map('n', 'gi', vim.lsp.buf.implementation, bufopts)
+                    map('n', 'gl', vim.diagnostic.open_float, bufopts)
+                    map('n', '<leader>ca', vim.lsp.buf.code_action, bufopts)
+                    map('n', 'gr', require("telescope.builtin").lsp_references, bufopts)
+                end,
+            })
+
+
+            -- enable and lsb configs for different lsps
             vim.lsp.enable('lua_ls')
             vim.lsp.config('lua_ls', {
                 settings = {
