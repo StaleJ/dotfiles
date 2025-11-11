@@ -56,6 +56,8 @@ return {
                 }
             })
             vim.lsp.enable('marksman')
+            vim.lsp.enable('ts_ls')
+            vim.lsp.enable('tailwindcss')
         end,
         opts = {
             inlay_hints = {
