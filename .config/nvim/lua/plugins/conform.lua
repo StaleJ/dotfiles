@@ -20,6 +20,7 @@ return {
         -- Define your formatters
         formatters_by_ft = {
             lua = { "stylua" },
+            python = { "isort", "black" },
         },
         -- Set default options
         default_format_opts = {

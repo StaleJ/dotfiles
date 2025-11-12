@@ -14,7 +14,7 @@ return {
         "mason-org/mason-lspconfig.nvim",
         config = function()
             require("mason-lspconfig").setup({
-                ensure_installed = { "lua_ls", "marksman" }
+                ensure_installed = { "lua_ls", "marksman", "pyright" }
             })
         end
     },
@@ -58,6 +58,7 @@ return {
             vim.lsp.enable('marksman')
             vim.lsp.enable('ts_ls')
             vim.lsp.enable('tailwindcss')
+            vim.lsp.enable('pyright')
         end,
         opts = {
             inlay_hints = {
