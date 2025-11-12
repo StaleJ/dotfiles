@@ -9,6 +9,11 @@ return {
     lazy = false, -- load immediately
     opts = {
         close_if_last_window = true,
+        filesystem = {
+            filtered_items = {
+                visible = true,
+            }
+        }
     },
     keys = {
         { "<C-n>", ':Neotree filesystem left toggle<CR>' },
