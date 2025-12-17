@@ -134,4 +134,16 @@ export LANG=en_US.UTF-8
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
+export REACT_TERMINAL="Ghostty"
 
+
+eval "$(rbenv init - zsh)"
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export PATH=$ANDROID_HOME/platform-tools:$PATH
+
+export PATH=$PATH:/Users/stale/.local/bin
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/stale/.docker/completions $fpath)
+autoload -Uz compinit
+compinit
+# End of Docker CLI completions
