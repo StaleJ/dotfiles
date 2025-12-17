@@ -37,6 +37,7 @@ return {
                     map('n', 'gd', vim.lsp.buf.definition, bufopts)
                     map('n', 'gi', vim.lsp.buf.implementation, bufopts)
                     map('n', 'gl', vim.diagnostic.open_float, bufopts)
+                    map('n', 'gr', vim.lsp.buf.references, bufopts)
                     map('n', '<leader>ca', vim.lsp.buf.code_action, bufopts)
                     map('n', 'gr', require("telescope.builtin").lsp_references, bufopts)
                 end,
