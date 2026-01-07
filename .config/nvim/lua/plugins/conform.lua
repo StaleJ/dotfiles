@@ -21,15 +21,20 @@ return {
         formatters_by_ft = {
             lua = { "stylua" },
             python = { "isort", "black" },
+            cs = { "csharpier" },
         },
         -- Set default options
         default_format_opts = {
             lsp_format = "fallback",
         },
         -- Set up format-on-save
-        format_on_save = { timeout_ms = 500 },
+        format_on_save = { timeout_ms = 2000 },
         -- Customize formatters
         formatters = {
+            csharpier = {
+                command = "csharpier",
+                args = { "format", "--write-stdout" },
+            },
             shfmt = {
                 prepend_args = { "-i", "2" },
             },
