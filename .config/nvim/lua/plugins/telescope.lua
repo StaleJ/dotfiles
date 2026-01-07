@@ -5,9 +5,22 @@ return {
     config = function()
         local builtin = require('telescope.builtin')
         
+        local utils = require("telescope.utils")
+        local function filename_with_last_three(_, path)
+            local tail = utils.path_tail(path)
+            local sep = utils.get_separator()
+            local parts = vim.split(path, sep, { plain = true })
+            local start_idx = math.max(#parts - 3, 1)
+            local parent = table.concat(vim.list_slice(parts, start_idx, #parts - 1), sep)
+            if parent ~= "" then
+                return string.format("%s  …/%s", tail, parent)
+            end
+            return tail
+        end
+
         require("telescope").setup({
             defaults = {
-                path_display = { "filename_first" },
+                path_display = filename_with_last_three,
                 layout_strategy = "horizontal",
                 layout_config = {
                     width = 0.9,
