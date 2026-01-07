@@ -19,5 +19,6 @@
   "roslyn.nvim": { "branch": "main", "commit": "365157b551422d11073772e6d823619bc0d22e81" },
   "telescope-ui-select.nvim": { "branch": "master", "commit": "6e51d7da30bd139a6950adf2a47fda6df9fa06d2" },
   "telescope.nvim": { "branch": "master", "commit": "a0bbec21143c7bc5f8bb02e0005fa0b982edc026" },
-  "vscode.nvim": { "branch": "main", "commit": "4d1c3c64d1afddd7934fb0e687fd9557fc66be41" }
+  "vscode.nvim": { "branch": "main", "commit": "4d1c3c64d1afddd7934fb0e687fd9557fc66be41" },
+  "which-key.nvim": { "branch": "main", "commit": "3aab2147e74890957785941f0c1ad87d0a44c15a" }
 }
