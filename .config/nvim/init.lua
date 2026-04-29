@@ -113,6 +113,7 @@ vim.pack.add({
     'https://github.com/stevearc/conform.nvim',
     'https://github.com/stevearc/oil.nvim',
     'https://github.com/tpope/vim-fugitive',
+    'https://github.com/akinsho/bufferline.nvim',
 })
 
 
@@ -141,6 +142,7 @@ require('mini.basics').setup()
 require('mini.pairs').setup()
 require('mini.completion').setup()
 require('mini.icons').setup()
+MiniIcons.mock_nvim_web_devicons()
 require('mini.snippets').setup()
 require('mini.statusline').setup()
 require('mini.diff').setup()
@@ -152,6 +154,36 @@ require('mini.pick').setup()
 
 
 map('n', '<leader>do', MiniDiff.toggle_overlay, { desc = 'Toggle diff overlay' })
+
+-- ============================================================================
+-- BUFFERLINE
+-- ============================================================================
+
+require('bufferline').setup({
+    options = {
+        mode = "buffers",
+        diagnostics = "nvim_lsp",
+        separator_style = "thin",
+        always_show_bufferline = false,
+        close_command = "bdelete %d",
+        right_mouse_command = "bdelete %d",
+        offsets = {
+            {
+                filetype = "oil",
+                text = "Oil",
+                highlight = "Directory",
+                text_align = "left",
+            },
+        },
+    },
+})
+
+map("n", "]b", "<cmd>BufferLineCycleNext<CR>", { desc = "Next buffer tab" })
+map("n", "[b", "<cmd>BufferLineCyclePrev<CR>", { desc = "Previous buffer tab" })
+map("n", "<leader>bd", "<cmd>bdelete<CR>", { desc = "Close buffer" })
+map("n", "<leader>bp", "<cmd>BufferLinePick<CR>", { desc = "Pick buffer tab" })
+map("n", "<leader>bH", "<cmd>BufferLineMovePrev<CR>", { desc = "Move buffer tab left" })
+map("n", "<leader>bL", "<cmd>BufferLineMoveNext<CR>", { desc = "Move buffer tab right" })
 
 -- ============================================================================
 -- TELESCOPE
