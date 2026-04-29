@@ -73,7 +73,10 @@ map("n", "<leader>gs", "<cmd>Telescope git_status<cr>")
 
 -- LSP
 map("n", "gd", vim.lsp.buf.definition, { desc = "Go to defintion" })
-map("n", "gr", vim.lsp.buf.references, { desc = "References" })
+map("n", "gi", vim.lsp.buf.implementation, { desc = "Go to implementation" })
+map("n", "gr", function()
+    require('telescope.builtin').lsp_references()
+end, { desc = "Telescope references" })
 map("n", "<leader>e", vim.diagnostic.open_float, { desc = "Diagnostic float" })
 map("n", "<leader>rn", vim.lsp.buf.rename, { desc = "Rename symbol" })
 map("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code action" })
