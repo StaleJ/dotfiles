@@ -114,6 +114,7 @@ vim.pack.add({
     'https://github.com/stevearc/oil.nvim',
     'https://github.com/tpope/vim-fugitive',
     'https://github.com/akinsho/bufferline.nvim',
+    'https://github.com/folke/snacks.nvim',
 })
 
 
@@ -154,6 +155,28 @@ require('mini.pick').setup()
 
 
 map('n', '<leader>do', MiniDiff.toggle_overlay, { desc = 'Toggle diff overlay' })
+
+-- ============================================================================
+-- SNACKS
+-- ============================================================================
+
+local snacks = require('snacks')
+if not snacks.did_setup then
+    snacks.setup({
+        explorer = {
+            enabled = true,
+            replace_netrw = false,
+        },
+        picker = {
+            enabled = true,
+            ui_select = false,
+        },
+    })
+end
+
+map('n', '<leader>fe', function()
+    Snacks.explorer.reveal()
+end, { desc = 'Reveal file in explorer' })
 
 -- ============================================================================
 -- BUFFERLINE
