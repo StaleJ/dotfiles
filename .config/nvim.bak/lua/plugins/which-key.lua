@@ -23,6 +23,7 @@ return {
         wk.add({
             { "<leader>b", group = "Buffers" },
             { "<leader>c", group = "Code" },
+            { "<leader>d", group = "Debug" },
             { "<leader>f", group = "Find/Format" },
             { "<leader>g", group = "Git" }, -- Assuming you might add git mappings later
             { "<leader>l", group = "LSP" },

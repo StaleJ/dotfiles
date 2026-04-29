@@ -125,6 +125,7 @@ alias py="python3"
 alias cpwd="pwd | tr -d '\n' | pbcopy && echo 'pwd copied to clipboard'"
 alias app="cd ~/git/horde/HordeApp/"
 alias generate-user="/Users/stale/git/NameGenerator/publish/NameGenerator"
+alias metro="/Users/stale/Dev/Horde/Apps/HordeApp/node_modules/.generated/launchPackager.command"
 export LANG=en_US.UTF-8
 
 # bun completions

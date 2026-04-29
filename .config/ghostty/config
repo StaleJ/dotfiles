@@ -3,3 +3,4 @@ font-size = 18
 
 keybind = ctrl+d=new_split:right
 keybind = ctrl+z=close_surface
+macos-titlebar-style = hidden

@@ -31,6 +31,7 @@ return {
                 callback = function(args)
                     local bufopts = { noremap = true, silent = true, buffer = args.buf }
                     local map     = vim.keymap.set
+                    local client  = vim.lsp.get_client_by_id(args.data.client_id)
 
                     map('n', 'gy', vim.lsp.buf.type_definition, bufopts)
                     map('n', 'gD', vim.lsp.buf.declaration, bufopts)
@@ -40,6 +41,12 @@ return {
                     map('n', 'gr', vim.lsp.buf.references, bufopts)
                     map('n', '<leader>ca', vim.lsp.buf.code_action, bufopts)
                     map('n', 'gr', require("telescope.builtin").lsp_references, bufopts)
+
+                    if client and client.name == "roslyn" then
+                        map('n', '<leader>lt', '<cmd>Roslyn target<CR>', vim.tbl_extend("force", bufopts, {
+                            desc = "Roslyn: Select Target",
+                        }))
+                    end
                 end,
             })
 
@@ -60,6 +67,32 @@ return {
             vim.lsp.enable('ts_ls')
             vim.lsp.enable('tailwindcss')
             vim.lsp.enable('pyright')
+
+            vim.lsp.config('sourcekit', {
+                cmd = { vim.trim(vim.fn.system("xcrun -f sourcekit-lsp")) },
+                filetypes = { "swift" },
+                root_dir = function(bufnr, on_dir)
+                    local fname = vim.api.nvim_buf_get_name(bufnr)
+                    local dir = vim.fn.fnamemodify(fname, ":p:h")
+                    -- walk up looking for project markers
+                    while dir ~= "/" do
+                        if vim.fn.filereadable(dir .. "/buildServer.json") == 1
+                            or vim.fn.glob(dir .. "/*.xcodeproj") ~= ""
+                            or vim.fn.glob(dir .. "/*.xcworkspace") ~= ""
+                            or vim.fn.filereadable(dir .. "/Package.swift") == 1 then
+                            on_dir(dir)
+                            return
+                        end
+                        dir = vim.fn.fnamemodify(dir, ":h")
+                    end
+                    -- fallback to git root
+                    local git = vim.fs.root(bufnr, ".git")
+                    if git then
+                        on_dir(git)
+                    end
+                end,
+            })
+            vim.lsp.enable('sourcekit')
         end,
         opts = {
             inlay_hints = {
