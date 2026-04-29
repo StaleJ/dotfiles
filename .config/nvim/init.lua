@@ -56,7 +56,10 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold" }, {
 local map = vim.keymap.set
 
 map("n", "<Esc>", "<cmd>nohlsearch<CR>")
-map('n', '<leader>so', '<cmd>source $MYVIMRC<CR>', { desc = 'Source init.lua' })
+map('n', '<leader>so', function()
+    vim.cmd('source $MYVIMRC')
+    vim.api.nvim_echo({ { 'Config reloaded', 'Normal' } }, false, {})
+end, { desc = 'Source init.lua' })
 
 -- Window navigation
 map("n", "<C-h>", "<C-w>h")
@@ -80,6 +83,20 @@ end, { desc = "Telescope references" })
 map("n", "<leader>e", vim.diagnostic.open_float, { desc = "Diagnostic float" })
 map("n", "<leader>rn", vim.lsp.buf.rename, { desc = "Rename symbol" })
 map("n", "<leader>ca", vim.lsp.buf.code_action, { desc = "Code action" })
+map("n", "<leader>li", function()
+    local clients = vim.lsp.get_clients({ bufnr = 0 })
+    if #clients == 0 then
+        vim.api.nvim_echo({ { "No LSP attached", "WarningMsg" } }, false, {})
+        return
+    end
+
+    local names = vim.tbl_map(function(client)
+        return client.name
+    end, clients)
+    table.sort(names)
+
+    vim.api.nvim_echo({ { "LSP: " .. table.concat(names, ", "), "Normal" } }, false, {})
+end, { desc = "Show active LSP" })
 
 -- Add all plugins at once
 vim.pack.add({
