@@ -105,7 +105,7 @@ vim.pack.add({
     'https://github.com/nvim-treesitter/nvim-treesitter',
     'https://github.com/mason-org/mason-lspconfig.nvim',
     'https://github.com/folke/lazydev.nvim',
-    'https://github.com/drewtempelmeyer/palenight.vim',
+    { src = 'https://github.com/dracula/vim', name = 'dracula' },
     'https://github.com/nvim-mini/mini.nvim',
     'https://github.com/nvim-lua/plenary.nvim',
     'https://github.com/nvim-telescope/telescope.nvim',
@@ -133,7 +133,7 @@ vim.lsp.enable('vtsls')
 -- COLORSCHEME
 -- ============================================================================
 
-vim.cmd.colorscheme('palenight')
+vim.cmd.colorscheme('dracula')
 
 -- ============================================================================
 -- Mini
@@ -177,6 +177,10 @@ end
 map('n', '<leader>fe', function()
     Snacks.explorer.reveal()
 end, { desc = 'Reveal file in explorer' })
+
+map('n', '<leader>rF', function()
+    Snacks.rename.rename_file()
+end, { desc = 'Rename file' })
 
 -- ============================================================================
 -- BUFFERLINE
@@ -227,6 +231,17 @@ require('oil').setup()
 
 map('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
 
+vim.api.nvim_create_autocmd("User", {
+    pattern = "OilActionsPost",
+    callback = function(event)
+        for _, action in ipairs(event.data.actions or {}) do
+            if action.type == "move" then
+                Snacks.rename.on_rename_file(action.src_url, action.dest_url)
+            end
+        end
+    end,
+})
+
 -- ============================================================================
 -- LAZYDEV
 -- ============================================================================
@@ -244,7 +259,7 @@ require("lazydev").setup({
 require('mason').setup()
 
 require('mason-lspconfig').setup({
-    ensure_installed = { 'lua_ls', 'vtsls' },
+    ensure_installed = { 'lua_ls', 'vtsls', 'jsonls' },
 })
 
 
@@ -285,7 +300,7 @@ end, { desc = "Format file or selection" })
 -- ============================================================================
 -- TREESITTER
 -- ============================================================================
-require('nvim-treesitter').install { 'lua', 'javascript', 'c_sharp', 'markdown', 'typescript', 'tsx', 'html', 'css' }
+require('nvim-treesitter').install { 'lua', 'javascript', 'c_sharp', 'markdown', 'typescript', 'tsx', 'html', 'css', 'json' }
 vim.api.nvim_create_autocmd('FileType', {
     callback = function() pcall(vim.treesitter.start) end,
 })
