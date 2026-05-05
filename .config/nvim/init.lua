@@ -115,6 +115,8 @@ vim.pack.add({
     'https://github.com/tpope/vim-fugitive',
     'https://github.com/akinsho/bufferline.nvim',
     'https://github.com/folke/snacks.nvim',
+    'https://github.com/rafamadriz/friendly-snippets',
+    { src = 'https://github.com/obsidian-nvim/obsidian.nvim', version = vim.version.range('*') },
 })
 
 
@@ -126,8 +128,27 @@ vim.lsp.config('lua_ls', {
     },
 })
 
+vim.lsp.config('typos_lsp', {
+    filetypes = {
+        'css',
+        'cs',
+        'gitcommit',
+        'html',
+        'javascript',
+        'javascriptreact',
+        'json',
+        'lua',
+        'markdown',
+        'text',
+        'typescript',
+        'typescriptreact',
+    },
+    root_markers = { '.git', 'typos.toml', '_typos.toml', '.typos.toml', 'pyproject.toml', 'Cargo.toml' },
+})
+
 vim.lsp.enable('roslyn_ls')
 vim.lsp.enable('vtsls')
+vim.lsp.enable('typos_lsp')
 
 -- ============================================================================
 -- COLORSCHEME
@@ -144,17 +165,51 @@ require('mini.pairs').setup()
 require('mini.completion').setup()
 require('mini.icons').setup()
 MiniIcons.mock_nvim_web_devicons()
-require('mini.snippets').setup()
+local snippets = require('mini.snippets')
+local gen_loader = snippets.gen_loader
+local csharp_snippets = {
+    'csharp/csharp.json',
+    'csharp/csharpdoc.json',
+    '**/cs.json',
+}
+
+snippets.setup({
+    snippets = {
+        gen_loader.from_lang({
+            lang_patterns = {
+                cs = csharp_snippets,
+                c_sharp = csharp_snippets,
+                csharp = csharp_snippets,
+            },
+        }),
+    },
+})
+snippets.start_lsp_server()
 require('mini.statusline').setup()
 require('mini.diff').setup()
 require('mini.git').setup()
 require('mini.ai').setup()
 require('mini.pick').setup()
+require('mini.extra').setup()
 
 
 
 
 map('n', '<leader>do', MiniDiff.toggle_overlay, { desc = 'Toggle diff overlay' })
+map('n', '<leader>ss', function()
+    MiniExtra.pickers.spellsuggest()
+end, { desc = 'Spell suggestions' })
+
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = { 'gitcommit', 'markdown', 'text' },
+    callback = function()
+        vim.opt_local.spell = true
+        vim.opt_local.spelllang = 'en_us'
+        if vim.bo.filetype == 'markdown' then
+            vim.opt_local.conceallevel = 2
+        end
+    end,
+})
 
 -- ============================================================================
 -- SNACKS
@@ -229,6 +284,190 @@ map('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
 require('todo-comments').setup()
 require('oil').setup()
 
+-- ============================================================================
+-- OBSIDIAN / TASKS
+-- ============================================================================
+
+local babel_vault = '/Users/stale/Babel'
+local task_files = {
+    inbox = babel_vault .. '/Inbox.md',
+    tasks = babel_vault .. '/Tasks.md',
+}
+
+require('obsidian').setup({
+    legacy_commands = false,
+    workspaces = {
+        {
+            name = 'Babel',
+            path = babel_vault,
+        },
+    },
+    picker = {
+        name = 'telescope.nvim',
+    },
+    completion = {
+        nvim_cmp = false,
+        blink = false,
+    },
+})
+
+local function task_file_defaults(path)
+    if path == task_files.tasks then
+        return { '---', 'tags:', '  - tasks', '  - long-running', '---', '', '# Tasks', '', '## Long-running', '' }
+    end
+    return { '---', 'tags:', '  - tasks', '  - inbox', '---', '', '# Inbox', '', '## Short-lived', '' }
+end
+
+local function ensure_task_file(path)
+    if vim.fn.filereadable(path) == 0 then
+        vim.fn.writefile(task_file_defaults(path), path)
+    end
+end
+
+local function open_task_file(path)
+    ensure_task_file(path)
+    vim.cmd.edit(vim.fn.fnameescape(path))
+end
+
+local function find_task_buffer(path)
+    local target = vim.fn.fnamemodify(path, ':p')
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        local name = vim.api.nvim_buf_get_name(bufnr)
+        if name ~= '' and vim.fn.fnamemodify(name, ':p') == target then
+            return bufnr
+        end
+    end
+end
+
+local function append_task_lines(path, task_lines)
+    ensure_task_file(path)
+    local bufnr = find_task_buffer(path)
+
+    if bufnr and vim.api.nvim_buf_is_loaded(bufnr) then
+        local line_count = vim.api.nvim_buf_line_count(bufnr)
+        local last_line = vim.api.nvim_buf_get_lines(bufnr, line_count - 1, line_count, false)[1] or ''
+        local lines = {}
+        if line_count > 0 and last_line ~= '' then
+            table.insert(lines, '')
+        end
+        vim.list_extend(lines, task_lines)
+        vim.api.nvim_buf_set_lines(bufnr, line_count, line_count, false, lines)
+        return line_count + #lines
+    end
+
+    local lines = vim.fn.readfile(path)
+    if #lines > 0 and lines[#lines] ~= '' then
+        table.insert(lines, '')
+    end
+    vim.list_extend(lines, task_lines)
+    vim.fn.writefile(lines, path)
+
+    return #lines
+end
+
+local function append_task(path, task)
+    task = vim.trim(task or '')
+    if task == '' then
+        return
+    end
+
+    append_task_lines(path, { '- [ ] ' .. task })
+    vim.api.nvim_echo({ { 'Added task to ' .. vim.fn.fnamemodify(path, ':t'), 'Normal' } }, false, {})
+end
+
+local function capture_task(path, prompt)
+    vim.ui.input({ prompt = prompt }, function(input)
+        append_task(path, input)
+    end)
+end
+
+local function append_task_section(path, title)
+    title = vim.trim(title or '')
+    if title == '' then
+        return
+    end
+
+    local cursor_line = append_task_lines(path, { '### ' .. title, '' })
+    open_task_file(path)
+    vim.api.nvim_win_set_cursor(0, { cursor_line, 0 })
+    vim.cmd.startinsert()
+end
+
+local function capture_task_section(path, prompt)
+    vim.ui.input({ prompt = prompt }, function(input)
+        append_task_section(path, input)
+    end)
+end
+
+vim.api.nvim_create_user_command('TaskLong', function()
+    open_task_file(task_files.tasks)
+end, { desc = 'Open long-running tasks' })
+
+vim.api.nvim_create_user_command('TaskInbox', function()
+    open_task_file(task_files.inbox)
+end, { desc = 'Open task inbox' })
+
+vim.api.nvim_create_user_command('TaskCapture', function(opts)
+    if opts.args ~= '' then
+        append_task(task_files.inbox, opts.args)
+    else
+        capture_task(task_files.inbox, 'Inbox task: ')
+    end
+end, { nargs = '*', desc = 'Capture short-lived task' })
+
+vim.api.nvim_create_user_command('TaskCaptureLong', function(opts)
+    if opts.args ~= '' then
+        append_task(task_files.tasks, opts.args)
+    else
+        capture_task(task_files.tasks, 'Long-running task: ')
+    end
+end, { nargs = '*', desc = 'Capture long-running task' })
+
+vim.api.nvim_create_user_command('TaskSection', function(opts)
+    if opts.args ~= '' then
+        append_task_section(task_files.inbox, opts.args)
+    else
+        capture_task_section(task_files.inbox, 'Inbox section: ')
+    end
+end, { nargs = '*', desc = 'Create short-lived task section' })
+
+vim.api.nvim_create_user_command('TaskSectionLong', function(opts)
+    if opts.args ~= '' then
+        append_task_section(task_files.tasks, opts.args)
+    else
+        capture_task_section(task_files.tasks, 'Long-running section: ')
+    end
+end, { nargs = '*', desc = 'Create long-running task section' })
+
+vim.api.nvim_create_user_command('TaskSearch', function()
+    builtin.live_grep({
+        cwd = babel_vault,
+        default_text = '- \\[ \\]',
+        glob_pattern = '*.md',
+        prompt_title = 'Unchecked vault tasks',
+    })
+end, { desc = 'Search unchecked vault tasks' })
+
+map('n', '<leader>tt', function()
+    open_task_file(task_files.tasks)
+end, { desc = 'Open long-running tasks' })
+
+map('n', '<leader>ti', function()
+    open_task_file(task_files.inbox)
+end, { desc = 'Open task inbox' })
+
+map('n', '<leader>ta', function()
+    capture_task_section(task_files.inbox, 'Inbox section: ')
+end, { desc = 'Create short-lived task section' })
+
+map('n', '<leader>tA', function()
+    capture_task_section(task_files.tasks, 'Long-running section: ')
+end, { desc = 'Create long-running task section' })
+
+map('n', '<leader>ts', '<cmd>TaskSearch<CR>', { desc = 'Search unchecked vault tasks' })
+map('n', '<leader>tc', '<cmd>TodoTelescope<CR>', { desc = 'Code TODOs' })
+map('n', '<leader>tx', '<cmd>Obsidian toggle_checkbox<CR>', { desc = 'Toggle task checkbox' })
+
 map('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
 
 vim.api.nvim_create_autocmd("User", {
@@ -259,7 +498,7 @@ require("lazydev").setup({
 require('mason').setup()
 
 require('mason-lspconfig').setup({
-    ensure_installed = { 'lua_ls', 'vtsls', 'jsonls' },
+    ensure_installed = { 'lua_ls', 'vtsls', 'jsonls', 'typos_lsp' },
 })
 
 
