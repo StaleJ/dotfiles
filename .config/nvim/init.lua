@@ -71,9 +71,6 @@ map("n", "<C-l>", "<C-w>l")
 map("v", "J", ":m '>+1<CR>gv=gv")
 map("v", "K", ":m '<-2<CR>gv=gv")
 
-map("n", "<leader>gs", "<cmd>Telescope git_status<cr>")
-
-
 -- LSP
 map("n", "gd", vim.lsp.buf.definition, { desc = "Go to defintion" })
 map("n", "gi", vim.lsp.buf.implementation, { desc = "Go to implementation" })
@@ -108,6 +105,9 @@ vim.pack.add({
     { src = 'https://github.com/dracula/vim', name = 'dracula' },
     'https://github.com/nvim-mini/mini.nvim',
     'https://github.com/nvim-lua/plenary.nvim',
+    'https://github.com/nvim-neotest/nvim-nio',
+    'https://github.com/nvim-neotest/neotest',
+    'https://github.com/nsidorenco/neotest-vstest',
     'https://github.com/nvim-telescope/telescope.nvim',
     'https://github.com/folke/todo-comments.nvim',
     'https://github.com/stevearc/conform.nvim',
@@ -276,6 +276,13 @@ map('n', '<leader>ff', builtin.find_files, { desc = 'Telescope find files' })
 map('n', '<leader>fg', builtin.live_grep, { desc = 'Telescope live grep' })
 map('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
 map('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
+
+-- Git: Telescope pickers fuzzy-match by path, commit message, branch name, etc.
+map('n', '<leader>gs', builtin.git_status, { desc = 'Telescope git status (working tree changes)' })
+map('n', '<leader>gc', builtin.git_commits, { desc = 'Telescope git commits' })
+map('n', '<leader>gh', builtin.git_bcommits, { desc = 'Telescope git commits (this file)' })
+map('n', '<leader>gb', builtin.git_branches, { desc = 'Telescope git branches' })
+map('n', '<leader>gz', builtin.git_stash, { desc = 'Telescope git stash' })
 
 -- ============================================================================
 -- SETUPS
@@ -467,6 +474,32 @@ end, { desc = 'Create long-running task section' })
 map('n', '<leader>ts', '<cmd>TaskSearch<CR>', { desc = 'Search unchecked vault tasks' })
 map('n', '<leader>tc', '<cmd>TodoTelescope<CR>', { desc = 'Code TODOs' })
 map('n', '<leader>tx', '<cmd>Obsidian toggle_checkbox<CR>', { desc = 'Toggle task checkbox' })
+
+-- ============================================================================
+-- NEOTEST
+-- ============================================================================
+
+require('neotest').setup({
+    adapters = {
+        require('neotest-vstest'),
+    },
+})
+
+map('n', '<leader>tn', function()
+    require('neotest').run.run()
+end, { desc = 'Run nearest test' })
+
+map('n', '<leader>tf', function()
+    require('neotest').run.run(vim.fn.expand('%'))
+end, { desc = 'Run test file' })
+
+map('n', '<leader>to', function()
+    require('neotest').output.open({ enter = true })
+end, { desc = 'Open test output' })
+
+map('n', '<leader>ts', function()
+    require('neotest').summary.toggle()
+end, { desc = 'Toggle test summary' })
 
 map('n', '-', '<CMD>Oil<CR>', { desc = 'Open parent directory' })
 
