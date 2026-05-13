@@ -95,6 +95,12 @@ map("n", "<leader>li", function()
     vim.api.nvim_echo({ { "LSP: " .. table.concat(names, ", "), "Normal" } }, false, {})
 end, { desc = "Show active LSP" })
 
+vim.g.user_emmet_install_global = 0
+vim.g.user_emmet_settings = {
+    javascriptreact = { extends = 'jsx' },
+    typescriptreact = { extends = 'jsx' },
+}
+
 -- Add all plugins at once
 vim.pack.add({
     'https://github.com/neovim/nvim-lspconfig',
@@ -116,9 +122,117 @@ vim.pack.add({
     'https://github.com/akinsho/bufferline.nvim',
     'https://github.com/folke/snacks.nvim',
     'https://github.com/rafamadriz/friendly-snippets',
+    'https://github.com/mattn/emmet-vim',
     { src = 'https://github.com/obsidian-nvim/obsidian.nvim', version = vim.version.range('*') },
 })
 
+
+local tailwind_config_files = {
+    'tailwind.config.js',
+    'tailwind.config.cjs',
+    'tailwind.config.mjs',
+    'tailwind.config.ts',
+    'tailwind.config.cts',
+    'tailwind.config.mts',
+}
+
+local postcss_config_files = {
+    'postcss.config.js',
+    'postcss.config.cjs',
+    'postcss.config.mjs',
+    'postcss.config.ts',
+}
+
+local function file_exists(path)
+    return path and vim.uv.fs_stat(path) ~= nil
+end
+
+local function read_json_file(path)
+    local lines = vim.fn.readfile(path)
+    if vim.v.shell_error ~= 0 then
+        return nil
+    end
+
+    local ok, decoded = pcall(vim.json.decode, table.concat(lines, '\n'))
+    if ok then
+        return decoded
+    end
+end
+
+local function package_has_dependency(package_json, dependency)
+    local package = read_json_file(package_json)
+    if not package then
+        return false
+    end
+
+    for _, key in ipairs({ 'dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies' }) do
+        if package[key] and package[key][dependency] then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function file_contains(path, pattern)
+    local lines = vim.fn.readfile(path, '', 200)
+    if vim.v.shell_error ~= 0 then
+        return false
+    end
+
+    return string.find(table.concat(lines, '\n'), pattern, 1, true) ~= nil
+end
+
+local function find_node_package(start_dir, package_name)
+    local node_modules = vim.fs.find('node_modules', {
+        path = start_dir,
+        upward = true,
+        type = 'directory',
+        limit = math.huge,
+    })
+
+    for _, dir in ipairs(node_modules) do
+        local package_dir = vim.fs.joinpath(dir, package_name)
+        if file_exists(vim.fs.joinpath(package_dir, 'package.json')) then
+            return package_dir
+        end
+    end
+end
+
+local function find_tailwind_root(filename)
+    local start_dir = filename ~= '' and vim.fs.dirname(filename) or vim.uv.cwd()
+
+    local config = vim.fs.find(tailwind_config_files, {
+        path = start_dir,
+        upward = true,
+        limit = 1,
+    })[1]
+    if config then
+        return vim.fs.dirname(config)
+    end
+
+    local package_jsons = vim.fs.find('package.json', {
+        path = start_dir,
+        upward = true,
+        limit = math.huge,
+    })
+    for _, package_json in ipairs(package_jsons) do
+        if package_has_dependency(package_json, 'tailwindcss') then
+            return vim.fs.dirname(package_json)
+        end
+    end
+
+    local postcss_configs = vim.fs.find(postcss_config_files, {
+        path = start_dir,
+        upward = true,
+        limit = math.huge,
+    })
+    for _, postcss_config in ipairs(postcss_configs) do
+        if file_contains(postcss_config, 'tailwindcss') or file_contains(postcss_config, '@tailwindcss/postcss') then
+            return vim.fs.dirname(postcss_config)
+        end
+    end
+end
 
 vim.lsp.config('lua_ls', {
     settings = {
@@ -146,8 +260,24 @@ vim.lsp.config('typos_lsp', {
     root_markers = { '.git', 'typos.toml', '_typos.toml', '.typos.toml', 'pyproject.toml', 'Cargo.toml' },
 })
 
+vim.lsp.config('tailwindcss', {
+    root_dir = function(bufnr, on_dir)
+        local root = find_tailwind_root(vim.api.nvim_buf_get_name(bufnr))
+        if root then
+            on_dir(root)
+        end
+    end,
+    settings = {
+        tailwindCSS = {
+            emmetCompletions = true,
+            classFunctions = { 'cn', 'clsx', 'cva', 'cx', 'tw', 'tw\\.[a-z-]+' },
+        },
+    },
+})
+
 vim.lsp.enable('roslyn_ls')
 vim.lsp.enable('vtsls')
+vim.lsp.enable('tailwindcss')
 vim.lsp.enable('typos_lsp')
 
 -- ============================================================================
@@ -199,6 +329,24 @@ map('n', '<leader>do', MiniDiff.toggle_overlay, { desc = 'Toggle diff overlay' }
 map('n', '<leader>ss', function()
     MiniExtra.pickers.spellsuggest()
 end, { desc = 'Spell suggestions' })
+
+-- ============================================================================
+-- EMMET
+-- ============================================================================
+
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = { 'html', 'css', 'javascriptreact', 'typescriptreact', 'javascript.jsx', 'typescript.tsx' },
+    callback = function()
+        vim.cmd.EmmetInstall()
+        vim.api.nvim_buf_set_keymap(
+            0,
+            'i',
+            '<Tab>',
+            'pumvisible() ? "\\<C-n>" : emmet#expandAbbrIntelligent("\\<Tab>")',
+            { expr = true, noremap = false, silent = true, desc = 'Expand Emmet abbreviation' }
+        )
+    end,
+})
 
 vim.api.nvim_create_autocmd('FileType', {
     pattern = { 'gitcommit', 'markdown', 'text' },
@@ -531,7 +679,7 @@ require("lazydev").setup({
 require('mason').setup()
 
 require('mason-lspconfig').setup({
-    ensure_installed = { 'lua_ls', 'vtsls', 'jsonls', 'typos_lsp' },
+    ensure_installed = { 'lua_ls', 'vtsls', 'jsonls', 'tailwindcss', 'typos_lsp' },
 })
 
 
@@ -557,6 +705,20 @@ conform.setup({
         csharpier = {
             command = mason_bin .. "/csharpier",
             args = { "format", "--write-stdout" },
+        },
+        prettier = {
+            append_args = function(_, ctx)
+                if not find_tailwind_root(ctx.filename) then
+                    return {}
+                end
+
+                local plugin = find_node_package(ctx.dirname, 'prettier-plugin-tailwindcss')
+                if plugin then
+                    return { '--plugin', plugin }
+                end
+
+                return {}
+            end,
         },
     },
 })

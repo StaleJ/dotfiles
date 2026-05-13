@@ -12,6 +12,10 @@
       "rev": "e7b91facff94bdf3a248df9b683119b84672256a",
       "src": "https://github.com/dracula/vim"
     },
+    "emmet-vim": {
+      "rev": "92ef2f74f4093edc99db5e9e4cf7e40116a85bd6",
+      "src": "https://github.com/mattn/emmet-vim"
+    },
     "friendly-snippets": {
       "rev": "6cd7280adead7f586db6fccbd15d2cac7e2188b9",
       "src": "https://github.com/rafamadriz/friendly-snippets"
