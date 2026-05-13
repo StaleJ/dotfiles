@@ -1,6 +1,6 @@
 
 font-size = 18
-theme = dracula
+theme = gruvbox
 
 keybind = ctrl+d=new_split:right
 keybind = ctrl+z=close_surface

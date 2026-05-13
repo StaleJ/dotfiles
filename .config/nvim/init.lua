@@ -108,7 +108,7 @@ vim.pack.add({
     'https://github.com/nvim-treesitter/nvim-treesitter',
     'https://github.com/mason-org/mason-lspconfig.nvim',
     'https://github.com/folke/lazydev.nvim',
-    { src = 'https://github.com/dracula/vim', name = 'dracula' },
+    { src = 'https://github.com/ellisonleao/gruvbox.nvim', name = 'gruvbox' },
     'https://github.com/nvim-mini/mini.nvim',
     'https://github.com/nvim-lua/plenary.nvim',
     'https://github.com/nvim-neotest/nvim-nio',
@@ -284,7 +284,16 @@ vim.lsp.enable('typos_lsp')
 -- COLORSCHEME
 -- ============================================================================
 
-vim.cmd.colorscheme('dracula')
+local ok, gruvbox = pcall(require, 'gruvbox')
+if ok then
+    gruvbox.setup({
+        terminal_colors = true,
+        contrast = 'hard',
+    })
+end
+
+vim.o.background = 'dark'
+vim.cmd.colorscheme('gruvbox')
 
 -- ============================================================================
 -- Mini
