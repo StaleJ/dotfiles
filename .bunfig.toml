@@ -1,0 +1,3 @@
+[install]
+# Bun 1.3+ only. Value is seconds: 14 days.
+minimumReleaseAge = 1209600

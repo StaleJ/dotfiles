@@ -1,0 +1,4 @@
+# pnpm 11+ global config on macOS. Value is minutes: 14 days.
+minimumReleaseAge: 20160
+minimumReleaseAgeStrict: true
+minimumReleaseAgeIgnoreMissingTime: false

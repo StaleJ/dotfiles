@@ -1,0 +1,2 @@
+# pnpm 10.16-10.x global config on macOS. Value is minutes: 14 days.
+minimumReleaseAge=20160
