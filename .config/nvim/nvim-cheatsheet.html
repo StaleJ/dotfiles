@@ -1,0 +1,1610 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A practical, verified reference for the active Neovim configuration.">
+  <meta name="color-scheme" content="dark light">
+  <title>Neovim cheat sheet — current setup</title>
+  <script>
+    try {
+      const savedTheme = localStorage.getItem("nvim-cheatsheet-theme");
+      if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+      else if (matchMedia("(prefers-color-scheme: light)").matches) document.documentElement.dataset.theme = "light";
+    } catch {}
+  </script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0e0d;
+      --surface: #111614;
+      --surface-raised: #171d1a;
+      --surface-soft: #1c2420;
+      --text: #e7eee9;
+      --muted: #94a39a;
+      --faint: #617068;
+      --line: #29332e;
+      --line-strong: #3a4840;
+      --green: #9ece6a;
+      --green-bright: #b7f07e;
+      --cyan: #7dcfff;
+      --amber: #e0af68;
+      --red: #f7768e;
+      --code: #0a0d0c;
+      --shadow: 0 24px 80px rgb(0 0 0 / 0.32);
+      --sidebar-width: 18.5rem;
+      --content-width: 70rem;
+      --radius: 16px;
+      --mono: "SFMono-Regular", "Cascadia Code", "Roboto Mono", Consolas, monospace;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    :root[data-theme="light"] {
+      color-scheme: light;
+      --bg: #f2f4ef;
+      --surface: #fcfdf9;
+      --surface-raised: #ffffff;
+      --surface-soft: #edf1e9;
+      --text: #172019;
+      --muted: #526158;
+      --faint: #76827a;
+      --line: #d5ddd6;
+      --line-strong: #bcc9bf;
+      --green: #397a35;
+      --green-bright: #256923;
+      --cyan: #176e91;
+      --amber: #9b641e;
+      --red: #ae3952;
+      --code: #111713;
+      --shadow: 0 24px 70px rgb(40 60 45 / 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 6rem;
+    }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 82% -10%, rgb(158 206 106 / 0.10), transparent 28rem),
+        radial-gradient(circle at 5% 28%, rgb(125 207 255 / 0.055), transparent 24rem),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.7;
+      text-rendering: optimizeLegibility;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    a {
+      color: var(--cyan);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.18em;
+    }
+
+    a:hover {
+      color: var(--green-bright);
+    }
+
+    .progress {
+      position: fixed;
+      inset: 0 auto auto 0;
+      z-index: 100;
+      width: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--green), var(--cyan));
+      box-shadow: 0 0 18px rgb(158 206 106 / 0.6);
+    }
+
+    .topbar {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 50;
+      height: 4.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0 1.35rem;
+      border-bottom: 1px solid rgb(148 163 154 / 0.15);
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      backdrop-filter: blur(18px) saturate(130%);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-width: 0;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 2rem;
+      height: 2rem;
+      place-items: center;
+      border: 1px solid rgb(158 206 106 / 0.32);
+      border-radius: 8px;
+      background: rgb(158 206 106 / 0.1);
+      color: var(--green-bright);
+      box-shadow: inset 0 0 20px rgb(158 206 106 / 0.04);
+    }
+
+    .brand-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .topbar-spacer {
+      flex: 1;
+    }
+
+    .icon-button {
+      display: inline-grid;
+      width: 2.45rem;
+      height: 2.45rem;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      transition: 150ms ease;
+    }
+
+    .icon-button:hover {
+      border-color: var(--line-strong);
+      color: var(--text);
+      transform: translateY(-1px);
+    }
+
+    .menu-button {
+      display: none;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+      min-height: 100vh;
+      padding-top: 4.25rem;
+    }
+
+    .sidebar {
+      position: fixed;
+      inset: 4.25rem auto 0 0;
+      z-index: 40;
+      width: var(--sidebar-width);
+      overflow-y: auto;
+      border-right: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 91%, transparent);
+      padding: 1.4rem 1.1rem 2rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line-strong) transparent;
+    }
+
+    .search-wrap {
+      position: relative;
+      margin-bottom: 1.35rem;
+    }
+
+    .search-wrap::before {
+      position: absolute;
+      top: 50%;
+      left: 0.85rem;
+      content: "/";
+      color: var(--green);
+      font-family: var(--mono);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .search {
+      width: 100%;
+      height: 2.65rem;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      outline: 0;
+      background: var(--bg);
+      color: var(--text);
+      padding: 0 2.6rem 0 2rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      transition: 150ms ease;
+    }
+
+    .search:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgb(158 206 106 / 0.12);
+    }
+
+    .search-shortcut {
+      position: absolute;
+      top: 50%;
+      right: 0.65rem;
+      padding: 0.05rem 0.35rem;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .search-status {
+      min-height: 1.3rem;
+      margin: -0.85rem 0 0.85rem;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 0.7rem;
+    }
+
+    .toc-label {
+      margin: 0 0 0.55rem 0.65rem;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .toc {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .toc li {
+      margin: 0.1rem 0;
+    }
+
+    .toc a {
+      display: grid;
+      grid-template-columns: 1.6rem 1fr;
+      gap: 0.35rem;
+      align-items: baseline;
+      padding: 0.48rem 0.65rem;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      line-height: 1.35;
+      text-decoration: none;
+      transition: 120ms ease;
+    }
+
+    .toc a span {
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 0.66rem;
+    }
+
+    .toc a:hover {
+      background: var(--surface-soft);
+      color: var(--text);
+    }
+
+    .toc a.active {
+      background: rgb(158 206 106 / 0.1);
+      color: var(--green-bright);
+    }
+
+    .toc a.active span {
+      color: var(--green);
+    }
+
+    main {
+      grid-column: 2;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(4rem, 9vw, 8.5rem) clamp(1.4rem, 6vw, 6rem) clamp(3rem, 7vw, 6rem);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero::before {
+      position: absolute;
+      inset: 0;
+      content: "";
+      background-image:
+        linear-gradient(rgb(148 163 154 / 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(148 163 154 / 0.055) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, black, transparent 90%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      width: min(100%, var(--content-width));
+      margin: 0 auto;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      margin-bottom: 1.2rem;
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 1.8rem;
+      height: 1px;
+      content: "";
+      background: var(--green);
+    }
+
+    h1 {
+      max-width: 13ch;
+      margin: 0;
+      font-size: clamp(3rem, 7vw, 6.6rem);
+      font-weight: 780;
+      letter-spacing: -0.065em;
+      line-height: 0.95;
+    }
+
+    h1 .accent {
+      color: var(--green-bright);
+    }
+
+    .hero-copy {
+      max-width: 46rem;
+      margin: 1.8rem 0 0;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.7vw, 1.2rem);
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 2rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-height: 2rem;
+      padding: 0.35rem 0.7rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.73rem;
+    }
+
+    .chip-dot {
+      width: 0.43rem;
+      height: 0.43rem;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+    }
+
+    article {
+      width: min(100%, var(--content-width));
+      margin: 0 auto;
+      padding: 2rem clamp(1.4rem, 6vw, 6rem) 8rem;
+    }
+
+    .doc-section {
+      position: relative;
+      padding: clamp(3.7rem, 8vw, 6.5rem) 0 1rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .doc-section:last-child {
+      border-bottom: 0;
+    }
+
+    .doc-section[hidden] {
+      display: none;
+    }
+
+    .section-kicker {
+      margin-bottom: 0.45rem;
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+    }
+
+    h2,
+    h3 {
+      text-wrap: balance;
+    }
+
+    h2 {
+      margin: 0 0 1.8rem;
+      font-size: clamp(2rem, 4.2vw, 3.4rem);
+      letter-spacing: -0.045em;
+      line-height: 1.05;
+    }
+
+    h3 {
+      margin: 3rem 0 1rem;
+      color: var(--text);
+      font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+      letter-spacing: -0.025em;
+      line-height: 1.25;
+    }
+
+    .heading-anchor {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .heading-anchor::after {
+      margin-left: 0.4rem;
+      content: "#";
+      color: transparent;
+      font-family: var(--mono);
+      font-size: 0.65em;
+      transition: color 120ms ease;
+    }
+
+    .heading-anchor:hover::after {
+      color: var(--faint);
+    }
+
+    p {
+      max-width: 52rem;
+      margin: 1rem 0;
+      color: var(--muted);
+    }
+
+    strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    ul,
+    ol {
+      max-width: 52rem;
+      margin: 1.2rem 0;
+      padding-left: 1.4rem;
+      color: var(--muted);
+    }
+
+    li {
+      margin: 0.48rem 0;
+      padding-left: 0.25rem;
+    }
+
+    li::marker {
+      color: var(--green);
+      font-family: var(--mono);
+      font-weight: 700;
+    }
+
+    code {
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      background: var(--surface-soft);
+      color: var(--amber);
+      padding: 0.12em 0.38em;
+      font-family: var(--mono);
+      font-size: 0.88em;
+      white-space: nowrap;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1.5rem 0 2.2rem;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 12px 35px rgb(0 0 0 / 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    th,
+    td {
+      padding: 0.84rem 1rem;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: var(--surface-soft);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    td {
+      color: var(--muted);
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr {
+      transition: background 100ms ease;
+    }
+
+    tbody tr:hover {
+      background: rgb(158 206 106 / 0.045);
+    }
+
+    td:first-child {
+      color: var(--text);
+      font-weight: 560;
+    }
+
+    .code-card {
+      overflow: hidden;
+      margin: 1.5rem 0 2rem;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--code);
+      box-shadow: var(--shadow);
+    }
+
+    .code-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 2.55rem;
+      padding: 0 0.65rem 0 1rem;
+      border-bottom: 1px solid #273129;
+      background: #111713;
+    }
+
+    .code-language {
+      color: #7e8f83;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .copy-button {
+      border: 1px solid #2b382f;
+      border-radius: 7px;
+      background: #171f19;
+      color: #a5b2a8;
+      padding: 0.28rem 0.58rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      cursor: pointer;
+      transition: 120ms ease;
+    }
+
+    .copy-button:hover {
+      border-color: #506556;
+      color: #d9e5dc;
+    }
+
+    .code-card pre {
+      overflow-x: auto;
+      margin: 0;
+      padding: 1.2rem 1.3rem 1.35rem;
+      scrollbar-color: #3b493f transparent;
+    }
+
+    .code-card pre code {
+      border: 0;
+      background: transparent;
+      color: #d7e2da;
+      padding: 0;
+      font-size: 0.86rem;
+      line-height: 1.65;
+      white-space: pre;
+    }
+
+    .empty-state {
+      display: none;
+      margin: 4rem 0;
+      padding: 2rem;
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .empty-state.visible {
+      display: block;
+    }
+
+    .back-to-top {
+      position: fixed;
+      right: 1.2rem;
+      bottom: 1.2rem;
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: 160ms ease;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    footer {
+      width: min(100%, var(--content-width));
+      margin: 0 auto;
+      padding: 0 clamp(1.4rem, 6vw, 6rem) 4rem;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--green);
+      outline-offset: 3px;
+    }
+
+    ::selection {
+      background: rgb(158 206 106 / 0.28);
+      color: var(--text);
+    }
+
+    @media (max-width: 900px) {
+      .menu-button {
+        display: inline-grid;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .sidebar {
+        width: min(88vw, 21rem);
+        transform: translateX(-105%);
+        transition: transform 180ms ease;
+        box-shadow: 20px 0 60px rgb(0 0 0 / 0.28);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      main {
+        width: 100%;
+      }
+
+      .hero {
+        padding-top: 4.5rem;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        font-size: 15px;
+      }
+
+      .topbar {
+        padding: 0 0.8rem;
+      }
+
+      .brand-mark {
+        width: 1.9rem;
+        height: 1.9rem;
+      }
+
+      .hero {
+        padding-inline: 1.2rem;
+      }
+
+      article,
+      footer {
+        padding-inline: 1.2rem;
+      }
+
+      h1 {
+        font-size: clamp(2.8rem, 16vw, 4.6rem);
+      }
+
+      th,
+      td {
+        min-width: 10rem;
+        padding: 0.75rem 0.8rem;
+      }
+    }
+
+    @media print {
+      :root {
+        color-scheme: light;
+        --bg: #fff;
+        --surface: #fff;
+        --surface-raised: #fff;
+        --surface-soft: #f3f4f1;
+        --text: #111;
+        --muted: #333;
+        --faint: #666;
+        --line: #ccc;
+        --line-strong: #aaa;
+        --green: #225c28;
+        --green-bright: #225c28;
+        --cyan: #175d78;
+        --amber: #754a14;
+        --code: #111;
+      }
+
+      body {
+        background: #fff;
+        font-size: 10pt;
+      }
+
+      .topbar,
+      .sidebar,
+      .progress,
+      .back-to-top,
+      .copy-button {
+        display: none !important;
+      }
+
+      .layout {
+        display: block;
+        padding: 0;
+      }
+
+      main {
+        display: block;
+      }
+
+      .hero {
+        padding: 1.5cm 0 1cm;
+      }
+
+      .hero::before {
+        display: none;
+      }
+
+      h1 {
+        max-width: none;
+        font-size: 34pt;
+      }
+
+      article,
+      footer {
+        width: auto;
+        padding: 0;
+      }
+
+      .doc-section,
+      .doc-section[hidden] {
+        display: block !important;
+        padding: 1cm 0 0.3cm;
+        break-inside: avoid-page;
+      }
+
+      .table-wrap,
+      .code-card {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <button class="icon-button menu-button" id="menuButton" type="button" aria-label="Open table of contents" aria-expanded="false">☰</button>
+    <div class="brand">
+      <span class="brand-mark">N</span>
+      <span class="brand-text">nvim://current-setup</span>
+    </div>
+    <div class="topbar-spacer"></div>
+    <button class="icon-button" id="printButton" type="button" aria-label="Print cheat sheet">⌘</button>
+    <button class="icon-button" id="themeButton" type="button" aria-label="Toggle color theme">◐</button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="search-wrap">
+        <label class="sr-only" for="search">Search cheat sheet</label>
+        <input class="search" id="search" type="search" placeholder="Search…" autocomplete="off">
+        <span class="search-shortcut">/</span>
+      </div>
+      <div class="search-status" id="searchStatus" aria-live="polite"></div>
+      <div class="toc-label">On this page</div>
+      <nav aria-label="Table of contents">
+        <ol class="toc" id="toc"><li><a href="#setup-at-a-glance" data-target="setup-at-a-glance"><span>01</span>Setup at a glance</a></li><li><a href="#start-here" data-target="start-here"><span>02</span>Start here</a></li><li><a href="#ide-to-neovim-translation" data-target="ide-to-neovim-translation"><span>03</span>IDE-to-Neovim translation</a></li><li><a href="#modes" data-target="modes"><span>04</span>Modes</a></li><li><a href="#essential-movement" data-target="essential-movement"><span>05</span>Essential movement</a></li><li><a href="#essential-editing" data-target="essential-editing"><span>06</span>Essential editing</a></li><li><a href="#files-and-search" data-target="files-and-search"><span>07</span>Files and search</a></li><li><a href="#buffers-windows-and-tabs" data-target="buffers-windows-and-tabs"><span>08</span>Buffers, windows, and tabs</a></li><li><a href="#code-intelligence-and-diagnostics" data-target="code-intelligence-and-diagnostics"><span>09</span>Code intelligence and diagnostics</a></li><li><a href="#completion-snippets-and-emmet" data-target="completion-snippets-and-emmet"><span>10</span>Completion, snippets, and Emmet</a></li><li><a href="#formatting" data-target="formatting"><span>11</span>Formatting</a></li><li><a href="#tests" data-target="tests"><span>12</span>Tests</a></li><li><a href="#git" data-target="git"><span>13</span>Git</a></li><li><a href="#personal-tasks-and-obsidian" data-target="personal-tasks-and-obsidian"><span>14</span>Personal tasks and Obsidian</a></li><li><a href="#terminal-and-external-commands" data-target="terminal-and-external-commands"><span>15</span>Terminal and external commands</a></li><li><a href="#search-spelling-and-useful-toggles" data-target="search-spelling-and-useful-toggles"><span>16</span>Search, spelling, and useful toggles</a></li><li><a href="#saving-quitting-and-recovery" data-target="saving-quitting-and-recovery"><span>17</span>Saving, quitting, and recovery</a></li><li><a href="#help-and-self-discovery" data-target="help-and-self-discovery"><span>18</span>Help and self-discovery</a></li><li><a href="#config-and-plugin-maintenance" data-target="config-and-plugin-maintenance"><span>19</span>Config and plugin maintenance</a></li><li><a href="#current-gaps-and-sharp-edges" data-target="current-gaps-and-sharp-edges"><span>20</span>Current gaps and sharp edges</a></li></ol>
+      </nav>
+    </aside>
+
+    <main>
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow">Personal field manual</div>
+          <h1>Neovim <span class="accent">cheat sheet</span></h1>
+          <p class="hero-copy">Verified against the active configuration on 2026-07-31. Built from the effective mappings—not generic defaults.</p>
+          <div class="hero-meta">
+            <span class="chip"><span class="chip-dot"></span>NVIM 0.12.4</span>
+            <span class="chip">Leader&nbsp;=&nbsp;Space</span>
+            <span class="chip">C# · TypeScript · React</span>
+            <span class="chip">Local reference</span>
+          </div>
+        </div>
+      </header>
+
+      <article id="content">
+        <section class="doc-section" data-section="setup at a glance">
+<div class="section-kicker">01</div>
+<h2 id="setup-at-a-glance"><a class="heading-anchor" href="#setup-at-a-glance" aria-label="Link to Setup at a glance">Setup at a glance</a></h2>
+<ul><li>Neovim: <code>0.12.4</code></li><li>Start command: <code>nvim</code> (the shell alias <code>vim</code> also runs <code>nvim</code>)</li><li>Active config: <code>~/.config/nvim/init.lua</code></li><li>This is a symlink into <code>~/dotfiles/.config/nvim/init.lua</code>.</li><li>Plugin manager: Neovim's native <code>vim.pack</code></li><li>Leader key: <code>Space</code></li><li>Theme: Gruvbox, dark, hard contrast</li><li>Indentation: 4 spaces</li><li>Line numbers: absolute plus relative</li><li>System clipboard: enabled for ordinary yank, delete, and paste</li><li>Main languages: C#, TypeScript/JavaScript, React, Tailwind CSS, JSON, Lua, HTML/CSS, and Markdown</li></ul>
+<p><code>~/.config/lazyvim</code> also exists, but plain <code>nvim</code> does <strong>not</strong> load it. It is only used when Neovim is launched with <code>NVIM_APPNAME=lazyvim</code>.</p>
+<p>Notation used below:</p>
+<ul><li><code>&lt;leader&gt;</code> means <code>Space</code>.</li><li><code>&lt;C-x&gt;</code> means <code>Ctrl+x</code>.</li><li><code>&lt;A-x&gt;</code> or <code>&lt;M-x&gt;</code> means <code>Option+x</code>.</li><li>Commands beginning with <code>:</code> are typed from Normal mode and confirmed with <code>Enter</code>.</li></ul>
+</section>
+<section class="doc-section" data-section="start here">
+<div class="section-kicker">02</div>
+<h2 id="start-here"><a class="heading-anchor" href="#start-here" aria-label="Link to Start here">Start here</a></h2>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">shell</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-sh"># Open a project from its root; this gives file search the right scope.
+nvim .
+
+# The shell alias works too.
+vim .
+
+# Open a file, optionally at a line.
+nvim path/to/file
+nvim +42 path/to/file</code></pre>
+</div>
+<p>The first habit to build is pressing <code>Esc</code> whenever you are unsure which mode you are in. In this config, <code>Esc</code> also clears search highlighting in Normal mode.</p>
+</section>
+<section class="doc-section" data-section="ide-to-neovim translation">
+<div class="section-kicker">03</div>
+<h2 id="ide-to-neovim-translation"><a class="heading-anchor" href="#ide-to-neovim-translation" aria-label="Link to IDE-to-Neovim translation">IDE-to-Neovim translation</a></h2>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Rider / JetBrains action</th><th scope="col">This setup</th></tr></thead>
+<tbody>
+<tr><td>Search Everywhere: files</td><td><code>&lt;leader&gt;ff</code></td></tr>
+<tr><td>Find in Files</td><td><code>&lt;leader&gt;fg</code></td></tr>
+<tr><td>Open buffers/files already visited</td><td><code>&lt;leader&gt;fb</code></td></tr>
+<tr><td>Solution/file explorer</td><td><code>&lt;leader&gt;fe</code></td></tr>
+<tr><td>Browse/edit the current directory</td><td><code>-</code></td></tr>
+<tr><td>Go to declaration/definition</td><td><code>gd</code></td></tr>
+<tr><td>Go to implementation</td><td><code>gi</code></td></tr>
+<tr><td>Find usages/references</td><td><code>gr</code></td></tr>
+<tr><td>Quick documentation / hover</td><td><code>K</code></td></tr>
+<tr><td>Rename symbol</td><td><code>&lt;leader&gt;rn</code></td></tr>
+<tr><td>Intention action / quick fix</td><td><code>&lt;leader&gt;ca</code></td></tr>
+<tr><td>Show current diagnostic</td><td><code>&lt;leader&gt;e</code></td></tr>
+<tr><td>Next/previous problem</td><td><code>]d</code> / <code>[d</code></td></tr>
+<tr><td>Reformat code</td><td><code>&lt;leader&gt;f</code></td></tr>
+<tr><td>Run test at cursor</td><td><code>&lt;leader&gt;tn</code></td></tr>
+<tr><td>Run current test file</td><td><code>&lt;leader&gt;tf</code></td></tr>
+<tr><td>Test runner window</td><td><code>&lt;leader&gt;ts</code></td></tr>
+<tr><td>Git changes</td><td><code>&lt;leader&gt;gs</code> or <code>:Git</code></td></tr>
+<tr><td>TODO tool window</td><td><code>&lt;leader&gt;tc</code></td></tr>
+<tr><td>Rename/move current file</td><td><code>&lt;leader&gt;rF</code></td></tr>
+<tr><td>Integrated terminal</td><td><code>:terminal</code></td></tr>
+<tr><td>Debugger</td><td>Not configured</td></tr>
+<tr><td>Run/build configuration</td><td>Not configured; use <code>:!dotnet …</code> or a terminal</td></tr>
+</tbody></table></div>
+</section>
+<section class="doc-section" data-section="modes">
+<div class="section-kicker">04</div>
+<h2 id="modes"><a class="heading-anchor" href="#modes" aria-label="Link to Modes">Modes</a></h2>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Mode</th><th scope="col">Enter it</th><th scope="col">Leave it</th></tr></thead>
+<tbody>
+<tr><td>Normal</td><td><code>Esc</code></td><td>Choose another mode</td></tr>
+<tr><td>Insert</td><td><code>i</code>, <code>a</code>, <code>o</code>, or <code>O</code></td><td><code>Esc</code></td></tr>
+<tr><td>Visual character</td><td><code>v</code></td><td><code>Esc</code></td></tr>
+<tr><td>Visual line</td><td><code>V</code></td><td><code>Esc</code></td></tr>
+<tr><td>Visual block / multicursor-like edits</td><td><code>&lt;C-v&gt;</code></td><td><code>Esc</code></td></tr>
+<tr><td>Command line</td><td><code>:</code></td><td><code>Esc</code> or run with <code>Enter</code></td></tr>
+</tbody></table></div>
+<p>Most Vim editing follows:</p>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">text</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-text">[count] + operator + motion/text object</code></pre>
+</div>
+<p>Examples:</p>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">text</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-text">3dw    delete three words
+ciw    change inside word
+ci&quot;    change inside quotes
+di(    delete inside parentheses
+va{    select around braces</code></pre>
+</div>
+</section>
+<section class="doc-section" data-section="essential movement">
+<div class="section-kicker">05</div>
+<h2 id="essential-movement"><a class="heading-anchor" href="#essential-movement" aria-label="Link to Essential movement">Essential movement</a></h2>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>h j k l</code></td><td>Left, down, up, right</td></tr>
+<tr><td><code>w</code> / <code>b</code> / <code>e</code></td><td>Next word / previous word / end of word</td></tr>
+<tr><td><code>0</code> / <code>^</code> / <code>$</code></td><td>Start / first text / end of line</td></tr>
+<tr><td><code>gg</code> / <code>G</code></td><td>First / last line</td></tr>
+<tr><td><code>{</code> / <code>}</code></td><td>Previous / next paragraph or code block</td></tr>
+<tr><td><code>&lt;C-d&gt;</code> / <code>&lt;C-u&gt;</code></td><td>Half-page down / up</td></tr>
+<tr><td><code>f&lt;char&gt;</code> / <code>F&lt;char&gt;</code></td><td>Find a character forward / backward on the line</td></tr>
+<tr><td><code>t&lt;char&gt;</code> / <code>T&lt;char&gt;</code></td><td>Move until just before a character</td></tr>
+<tr><td><code>;</code> / <code>,</code></td><td>Repeat / reverse the last <code>f</code>, <code>F</code>, <code>t</code>, or <code>T</code></td></tr>
+<tr><td><code>%</code></td><td>Jump between matching brackets</td></tr>
+<tr><td><code>/text</code></td><td>Search forward</td></tr>
+<tr><td><code>n</code> / <code>N</code></td><td>Next / previous search match</td></tr>
+<tr><td><code>*</code> / <code>#</code></td><td>Search forward / backward for word under cursor</td></tr>
+<tr><td><code>&lt;C-o&gt;</code> / <code>&lt;C-i&gt;</code></td><td>Back / forward through the jump list</td></tr>
+<tr><td><code>m&lt;char&gt;</code> / <code>'&lt;char&gt;</code></td><td>Set a mark / jump to it</td></tr>
+</tbody></table></div>
+<p>Uncounted <code>j</code> and <code>k</code> follow screen lines when a long line wraps. Counts still address real lines, so <code>5j</code> moves five file lines.</p>
+</section>
+<section class="doc-section" data-section="essential editing">
+<div class="section-kicker">06</div>
+<h2 id="essential-editing"><a class="heading-anchor" href="#essential-editing" aria-label="Link to Essential editing">Essential editing</a></h2>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>i</code> / <code>a</code></td><td>Insert before / after cursor</td></tr>
+<tr><td><code>I</code> / <code>A</code></td><td>Insert at start / end of line</td></tr>
+<tr><td><code>o</code> / <code>O</code></td><td>New line below / above and insert</td></tr>
+<tr><td><code>x</code></td><td>Delete character</td></tr>
+<tr><td><code>dd</code> / <code>D</code></td><td>Delete line / to end of line</td></tr>
+<tr><td><code>yy</code> / <code>Y</code></td><td>Yank line / to end of line</td></tr>
+<tr><td><code>p</code> / <code>P</code></td><td>Paste after / before</td></tr>
+<tr><td><code>u</code> / <code>&lt;C-r&gt;</code></td><td>Undo / redo</td></tr>
+<tr><td><code>r&lt;char&gt;</code> / <code>R</code></td><td>Replace one character / enter Replace mode</td></tr>
+<tr><td><code>c{motion}</code></td><td>Change a range, such as <code>cw</code> or <code>c$</code></td></tr>
+<tr><td><code>d{motion}</code></td><td>Delete a range, such as <code>dw</code> or <code>d}</code></td></tr>
+<tr><td><code>y{motion}</code></td><td>Yank a range, such as <code>yiw</code></td></tr>
+<tr><td><code>.</code></td><td>Repeat the last change</td></tr>
+<tr><td><code>J</code></td><td>Join the next line</td></tr>
+<tr><td><code>&gt;&gt;</code> / <code>&lt;&lt;</code></td><td>Indent / outdent a line</td></tr>
+<tr><td><code>=</code> with a motion</td><td>Re-indent, for example <code>=ap</code></td></tr>
+<tr><td><code>gcc</code></td><td>Toggle comment on the current line</td></tr>
+<tr><td><code>gc{motion}</code></td><td>Toggle comments over a range</td></tr>
+<tr><td><code>gO</code> / <code>go</code></td><td>Add a blank line above / below without entering Insert mode</td></tr>
+<tr><td><code>gy</code> / <code>gp</code></td><td>Explicitly copy to / paste from the system clipboard</td></tr>
+<tr><td><code>&lt;C-s&gt;</code></td><td>Save; from Insert/Visual mode, also return to Normal mode</td></tr>
+</tbody></table></div>
+<p>Because <code>clipboard=unnamedplus</code> is active, regular <code>y</code>, <code>d</code>, <code>c</code>, and <code>p</code> already use the macOS clipboard. Use the black-hole register when you want to delete without replacing your current clipboard:</p>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">text</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-text">&quot;+ is the system clipboard register
+&quot;+yy copies a line explicitly
+&quot;+p pastes explicitly
+&quot;_ is the discard (black-hole) register
+&quot;_dd deletes a line without replacing the clipboard</code></pre>
+</div>
+<p>The practical discard command is <code>&quot;_dd</code> (replace <code>dd</code> with any delete operation).</p>
+<p>In Visual mode, this config adds:</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>J</code> / <code>K</code></td><td>Move the selected lines down / up</td></tr>
+<tr><td><code>gy</code></td><td>Copy selection to system clipboard</td></tr>
+<tr><td><code>gp</code></td><td>Paste over selection without replacing the clipboard</td></tr>
+<tr><td><code>g/</code></td><td>Search only inside the selection</td></tr>
+</tbody></table></div>
+</section>
+<section class="doc-section" data-section="files and search">
+<div class="section-kicker">07</div>
+<h2 id="files-and-search"><a class="heading-anchor" href="#files-and-search" aria-label="Link to Files and search">Files and search</a></h2>
+<h3 id="telescope"><a class="heading-anchor" href="#telescope" aria-label="Link to Telescope">Telescope</a></h3>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;leader&gt;ff</code></td><td>Find files under the current working directory</td></tr>
+<tr><td><code>&lt;leader&gt;fg</code></td><td>Live grep file contents</td></tr>
+<tr><td><code>&lt;leader&gt;fb</code></td><td>Find an open buffer</td></tr>
+<tr><td><code>&lt;leader&gt;fh</code></td><td>Search Neovim help</td></tr>
+</tbody></table></div>
+<p>Common Telescope controls:</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;C-n&gt;</code> / <code>&lt;C-p&gt;</code></td><td>Next / previous result</td></tr>
+<tr><td><code>&lt;CR&gt;</code></td><td>Open selection</td></tr>
+<tr><td><code>&lt;C-x&gt;</code></td><td>Open in a horizontal split</td></tr>
+<tr><td><code>&lt;C-v&gt;</code></td><td>Open in a vertical split</td></tr>
+<tr><td><code>&lt;C-t&gt;</code></td><td>Open in a tab</td></tr>
+<tr><td><code>&lt;Esc&gt;</code></td><td>Close</td></tr>
+</tbody></table></div>
+<p>Useful discovery commands:</p>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim">:Telescope keymaps
+:Telescope commands
+:Telescope help_tags</code></pre>
+</div>
+<h3 id="snacks-explorer"><a class="heading-anchor" href="#snacks-explorer" aria-label="Link to Snacks explorer">Snacks explorer</a></h3>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;leader&gt;fe</code></td><td>Reveal the current file in the explorer</td></tr>
+<tr><td><code>&lt;leader&gt;rF</code></td><td>Rename the current file and notify attached LSPs</td></tr>
+</tbody></table></div>
+<h3 id="oil"><a class="heading-anchor" href="#oil" aria-label="Link to Oil">Oil</a></h3>
+<p>Press <code>-</code> to replace the current buffer with an editable directory listing. Edit file names like normal text, then <code>:w</code> to apply filesystem changes.</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys inside Oil</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;CR&gt;</code></td><td>Open entry</td></tr>
+<tr><td><code>-</code></td><td>Parent directory</td></tr>
+<tr><td><code>&lt;C-s&gt;</code> / <code>&lt;C-h&gt;</code></td><td>Open in vertical / horizontal split</td></tr>
+<tr><td><code>&lt;C-t&gt;</code></td><td>Open in a tab</td></tr>
+<tr><td><code>&lt;C-p&gt;</code></td><td>Preview</td></tr>
+<tr><td><code>g.</code></td><td>Toggle hidden files</td></tr>
+<tr><td><code>gs</code></td><td>Change sorting</td></tr>
+<tr><td><code>gx</code></td><td>Open with the system application</td></tr>
+<tr><td><code>g?</code></td><td>Show all Oil bindings</td></tr>
+<tr><td><code>&lt;C-c&gt;</code></td><td>Close Oil</td></tr>
+</tbody></table></div>
+<p>Oil supports creating, renaming, moving, and deleting through ordinary buffer edits. Review the listing before <code>:w</code>; those edits affect the real filesystem.</p>
+</section>
+<section class="doc-section" data-section="buffers, windows, and tabs">
+<div class="section-kicker">08</div>
+<h2 id="buffers-windows-and-tabs"><a class="heading-anchor" href="#buffers-windows-and-tabs" aria-label="Link to Buffers, windows, and tabs">Buffers, windows, and tabs</a></h2>
+<p>A buffer is an open file. A window is a view onto a buffer. A tab is a window layout, not the primary representation of an open file.</p>
+<h3 id="buffers"><a class="heading-anchor" href="#buffers" aria-label="Link to Buffers">Buffers</a></h3>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>]b</code> / <code>[b</code></td><td>Next / previous buffer</td></tr>
+<tr><td><code>&lt;leader&gt;bd</code></td><td>Close current buffer</td></tr>
+<tr><td><code>&lt;leader&gt;bp</code></td><td>Pick a buffer from the buffer line</td></tr>
+<tr><td><code>&lt;leader&gt;bH</code> / <code>&lt;leader&gt;bL</code></td><td>Move buffer tab left / right</td></tr>
+<tr><td><code>&lt;leader&gt;fb</code></td><td>Find an open buffer</td></tr>
+</tbody></table></div>
+<h3 id="windows-and-splits"><a class="heading-anchor" href="#windows-and-splits" aria-label="Link to Windows and splits">Windows and splits</a></h3>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys / command</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;C-h&gt;</code> / <code>&lt;C-j&gt;</code> / <code>&lt;C-k&gt;</code> / <code>&lt;C-l&gt;</code></td><td>Focus left / down / up / right</td></tr>
+<tr><td><code>:split file</code></td><td>Horizontal split</td></tr>
+<tr><td><code>:vsplit file</code></td><td>Vertical split</td></tr>
+<tr><td><code>&lt;C-w&gt;q</code></td><td>Close current window</td></tr>
+<tr><td><code>&lt;C-w&gt;=</code></td><td>Equalize split sizes</td></tr>
+<tr><td><code>&lt;C-w&gt;_</code> / <code>&lt;C-w&gt;|</code></td><td>Maximize height / width</td></tr>
+</tbody></table></div>
+</section>
+<section class="doc-section" data-section="code intelligence and diagnostics">
+<div class="section-kicker">09</div>
+<h2 id="code-intelligence-and-diagnostics"><a class="heading-anchor" href="#code-intelligence-and-diagnostics" aria-label="Link to Code intelligence and diagnostics">Code intelligence and diagnostics</a></h2>
+<h3 id="lsp-bindings"><a class="heading-anchor" href="#lsp-bindings" aria-label="Link to LSP bindings">LSP bindings</a></h3>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>gd</code></td><td>Go to definition</td></tr>
+<tr><td><code>gi</code></td><td>Go to implementation</td></tr>
+<tr><td><code>gr</code></td><td>Find references with Telescope</td></tr>
+<tr><td><code>K</code></td><td>Hover documentation when an LSP is attached</td></tr>
+<tr><td><code>&lt;leader&gt;rn</code></td><td>Rename symbol</td></tr>
+<tr><td><code>&lt;leader&gt;ca</code></td><td>Code action / quick fix</td></tr>
+<tr><td><code>&lt;leader&gt;e</code></td><td>Show diagnostic under the cursor</td></tr>
+<tr><td><code>[d</code> / <code>]d</code></td><td>Previous / next diagnostic</td></tr>
+<tr><td><code>[D</code> / <code>]D</code></td><td>First / last diagnostic in the buffer</td></tr>
+<tr><td><code>&lt;leader&gt;li</code></td><td>Show the names of LSP clients attached to this buffer</td></tr>
+</tbody></table></div>
+<p>Neovim also supplies buffer-local LSP defaults such as <code>grn</code> for rename, <code>gra</code> for code actions, <code>grr</code> for references, and <code>gri</code> for implementation. The shorter custom bindings above are the intended path in this setup.</p>
+<p>Enabled servers:</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Area</th><th scope="col">Server</th></tr></thead>
+<tbody>
+<tr><td>C#</td><td><code>roslyn_ls</code></td></tr>
+<tr><td>TypeScript / JavaScript / React</td><td><code>vtsls</code></td></tr>
+<tr><td>Tailwind CSS</td><td><code>tailwindcss</code></td></tr>
+<tr><td>JSON</td><td><code>jsonls</code></td></tr>
+<tr><td>Lua / Neovim config</td><td><code>lua_ls</code> plus <code>lazydev.nvim</code></td></tr>
+<tr><td>Spelling in code and prose</td><td><code>typos_lsp</code></td></tr>
+</tbody></table></div>
+<p>Tailwind starts only when a project has a Tailwind config, a Tailwind dependency, or a PostCSS config that mentions Tailwind.</p>
+<p>Useful checks:</p>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim">:checkhealth vim.lsp
+:Mason
+:checkhealth</code></pre>
+</div>
+</section>
+<section class="doc-section" data-section="completion, snippets, and emmet">
+<div class="section-kicker">10</div>
+<h2 id="completion-snippets-and-emmet"><a class="heading-anchor" href="#completion-snippets-and-emmet" aria-label="Link to Completion, snippets, and Emmet">Completion, snippets, and Emmet</a></h2>
+<p>Completion is provided by <code>mini.completion</code>, snippets by <code>mini.snippets</code> plus <code>friendly-snippets</code>, and pairs by <code>mini.pairs</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys in Insert mode</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;C-Space&gt;</code></td><td>Force LSP completion, then fallback completion</td></tr>
+<tr><td><code>&lt;A-Space&gt;</code></td><td>Force fallback completion</td></tr>
+<tr><td><code>&lt;C-n&gt;</code> / <code>&lt;C-p&gt;</code></td><td>Next / previous completion item</td></tr>
+<tr><td><code>&lt;C-y&gt;</code></td><td>Accept selected completion item</td></tr>
+<tr><td><code>&lt;C-e&gt;</code></td><td>Cancel completion</td></tr>
+<tr><td><code>&lt;C-f&gt;</code> / <code>&lt;C-b&gt;</code></td><td>Scroll completion documentation down / up</td></tr>
+<tr><td><code>&lt;C-j&gt;</code></td><td>Expand a matching snippet</td></tr>
+<tr><td><code>&lt;Tab&gt;</code> / <code>&lt;S-Tab&gt;</code></td><td>Jump forward / backward in an active built-in snippet</td></tr>
+</tbody></table></div>
+<p>In HTML, CSS, JSX, and TSX buffers, <code>&lt;Tab&gt;</code> has special behavior:</p>
+<ul><li>If the completion popup is visible, it selects the next item.</li><li>Otherwise, it tries to expand an Emmet abbreviation.</li><li>If neither applies, it inserts a tab/indent.</li></ul>
+<p>Examples: type <code>div.card&gt;h2+p</code> or <code>ul&gt;li*3</code>, then press <code>&lt;Tab&gt;</code>.</p>
+</section>
+<section class="doc-section" data-section="formatting">
+<div class="section-kicker">11</div>
+<h2 id="formatting"><a class="heading-anchor" href="#formatting" aria-label="Link to Formatting">Formatting</a></h2>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;leader&gt;f</code></td><td>Format the current file</td></tr>
+<tr><td>Visual selection, <code>&lt;leader&gt;f</code></td><td>Format only the selection</td></tr>
+</tbody></table></div>
+<p>Configured formatters:</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">File types</th><th scope="col">Formatter</th></tr></thead>
+<tbody>
+<tr><td>C#</td><td>CSharpier</td></tr>
+<tr><td>TypeScript, TSX, JavaScript, JSX</td><td>Prettier</td></tr>
+<tr><td>HTML, CSS, JSON</td><td>Prettier</td></tr>
+</tbody></table></div>
+<p>Formatting is manual; format-on-save is not configured. Prettier is resolved from a project's <code>node_modules</code> first, then from <code>PATH</code>. The Tailwind Prettier plugin is added when it is installed in a detected Tailwind project.</p>
+</section>
+<section class="doc-section" data-section="tests">
+<div class="section-kicker">12</div>
+<h2 id="tests"><a class="heading-anchor" href="#tests" aria-label="Link to Tests">Tests</a></h2>
+<p>Testing uses Neotest with the VSTest adapter, so the configured test workflow is primarily for .NET tests.</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;leader&gt;tn</code></td><td>Run the nearest test</td></tr>
+<tr><td><code>&lt;leader&gt;tf</code></td><td>Run all tests in the current file</td></tr>
+<tr><td><code>&lt;leader&gt;to</code></td><td>Open test output and focus it</td></tr>
+<tr><td><code>&lt;leader&gt;ts</code></td><td>Toggle the test summary</td></tr>
+</tbody></table></div>
+<p>There is no test-debug binding and no JavaScript test adapter configured.</p>
+</section>
+<section class="doc-section" data-section="git">
+<div class="section-kicker">13</div>
+<h2 id="git"><a class="heading-anchor" href="#git" aria-label="Link to Git">Git</a></h2>
+<h3 id="telescope-git-pickers"><a class="heading-anchor" href="#telescope-git-pickers" aria-label="Link to Telescope Git pickers">Telescope Git pickers</a></h3>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;leader&gt;gs</code></td><td>Working-tree status</td></tr>
+<tr><td><code>&lt;leader&gt;gc</code></td><td>Repository commits</td></tr>
+<tr><td><code>&lt;leader&gt;gh</code></td><td>Commit history for the current file</td></tr>
+<tr><td><code>&lt;leader&gt;gb</code></td><td>Branches</td></tr>
+<tr><td><code>&lt;leader&gt;gz</code></td><td>Stashes</td></tr>
+</tbody></table></div>
+<h3 id="inline-diffs-with-minidiff"><a class="heading-anchor" href="#inline-diffs-with-minidiff" aria-label="Link to Inline diffs with MiniDiff">Inline diffs with MiniDiff</a></h3>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>]h</code> / <code>[h</code></td><td>Next / previous hunk</td></tr>
+<tr><td><code>]H</code> / <code>[H</code></td><td>Last / first hunk</td></tr>
+<tr><td><code>&lt;leader&gt;do</code></td><td>Toggle detailed diff overlay</td></tr>
+<tr><td><code>ghgh</code></td><td>Apply/stage the hunk under the cursor</td></tr>
+<tr><td><code>gHgh</code></td><td>Reset/discard the hunk under the cursor</td></tr>
+<tr><td><code>dgh</code></td><td>Delete the hunk range as a text object</td></tr>
+</tbody></table></div>
+<p><code>gHgh</code> and <code>dgh</code> change buffer contents; inspect the hunk before using them.</p>
+<h3 id="fugitive"><a class="heading-anchor" href="#fugitive" aria-label="Link to Fugitive">Fugitive</a></h3>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim">:Git</code></pre>
+</div>
+<p>In the Fugitive status buffer:</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>s</code></td><td>Stage file or hunk</td></tr>
+<tr><td><code>u</code></td><td>Unstage file or hunk</td></tr>
+<tr><td><code>-</code></td><td>Toggle staged state</td></tr>
+<tr><td><code>=</code></td><td>Toggle inline diff</td></tr>
+<tr><td><code>cc</code></td><td>Create a commit</td></tr>
+<tr><td><code>g?</code></td><td>Show all Fugitive bindings</td></tr>
+</tbody></table></div>
+<p>The shell alias <code>lg</code> launches Lazygit. From Neovim, use <code>:terminal lg</code>, or run <code>lg</code> in a separate terminal pane.</p>
+</section>
+<section class="doc-section" data-section="personal tasks and obsidian">
+<div class="section-kicker">14</div>
+<h2 id="personal-tasks-and-obsidian"><a class="heading-anchor" href="#personal-tasks-and-obsidian" aria-label="Link to Personal tasks and Obsidian">Personal tasks and Obsidian</a></h2>
+<p>The configured Obsidian vault is <code>~/Babel</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;leader&gt;tt</code></td><td>Open long-running tasks (<code>~/Babel/Tasks.md</code>)</td></tr>
+<tr><td><code>&lt;leader&gt;ti</code></td><td>Open task inbox (<code>~/Babel/Inbox.md</code>)</td></tr>
+<tr><td><code>&lt;leader&gt;ta</code></td><td>Create a section in the inbox</td></tr>
+<tr><td><code>&lt;leader&gt;tA</code></td><td>Create a section in long-running tasks</td></tr>
+<tr><td><code>&lt;leader&gt;tc</code></td><td>Search code TODO/FIXME comments</td></tr>
+<tr><td><code>&lt;leader&gt;tx</code></td><td>Toggle the Markdown checkbox under the cursor</td></tr>
+</tbody></table></div>
+<p>Task commands:</p>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim">:TaskCapture
+:TaskCapture Buy milk
+:TaskCaptureLong
+:TaskCaptureLong Investigate new architecture
+:TaskSection
+:TaskSectionLong
+:TaskSearch
+:TaskInbox
+:TaskLong</code></pre>
+</div>
+<p>Important: <code>&lt;leader&gt;ts</code> was assigned to task search earlier in the config, but the later Neotest mapping overwrites it. Its effective action is <strong>toggle test summary</strong>. Use <code>:TaskSearch</code> to search unchecked vault tasks.</p>
+</section>
+<section class="doc-section" data-section="terminal and external commands">
+<div class="section-kicker">15</div>
+<h2 id="terminal-and-external-commands"><a class="heading-anchor" href="#terminal-and-external-commands" aria-label="Link to Terminal and external commands">Terminal and external commands</a></h2>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim">:terminal
+:split | terminal
+:vsplit | terminal</code></pre>
+</div>
+<p>The terminal automatically enters Terminal/Insert mode.</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;C-\&gt;&lt;C-n&gt;</code></td><td>Leave Terminal mode for Normal mode</td></tr>
+<tr><td><code>i</code></td><td>Re-enter Terminal mode</td></tr>
+<tr><td><code>&lt;C-w&gt;h/j/k/l</code></td><td>Move to another window after leaving Terminal mode</td></tr>
+<tr><td><code>:bd</code></td><td>Close the terminal buffer after leaving Terminal mode</td></tr>
+</tbody></table></div>
+<p>Run a shell command without opening a terminal buffer:</p>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim">:!dotnet build
+:!dotnet test
+:!dotnet run
+:!npm test</code></pre>
+</div>
+<p>Use <code>:make</code> only after configuring an appropriate <code>makeprg</code>; this setup does not currently set one.</p>
+</section>
+<section class="doc-section" data-section="search, spelling, and useful toggles">
+<div class="section-kicker">16</div>
+<h2 id="search-spelling-and-useful-toggles"><a class="heading-anchor" href="#search-spelling-and-useful-toggles" aria-label="Link to Search, spelling, and useful toggles">Search, spelling, and useful toggles</a></h2>
+<p>These <code>mini.basics</code> mappings begin with a literal backslash, not the leader:</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>\w</code></td><td>Toggle line wrapping</td></tr>
+<tr><td><code>\s</code></td><td>Toggle spelling</td></tr>
+<tr><td><code>\r</code></td><td>Toggle relative line numbers</td></tr>
+<tr><td><code>\n</code></td><td>Toggle line numbers</td></tr>
+<tr><td><code>\d</code></td><td>Toggle diagnostics for the buffer</td></tr>
+<tr><td><code>\h</code></td><td>Toggle search highlighting</td></tr>
+<tr><td><code>\c</code></td><td>Toggle cursor line</td></tr>
+<tr><td><code>\C</code></td><td>Toggle cursor column</td></tr>
+<tr><td><code>\l</code></td><td>Toggle invisible/list characters</td></tr>
+<tr><td><code>\i</code></td><td>Toggle case-insensitive search</td></tr>
+<tr><td><code>\b</code></td><td>Toggle dark/light background</td></tr>
+</tbody></table></div>
+<p>Spelling is enabled automatically in Git commit, Markdown, and text buffers.</p>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>]s</code> / <code>[s</code></td><td>Next / previous misspelling</td></tr>
+<tr><td><code>z=</code></td><td>Built-in spelling suggestions</td></tr>
+<tr><td><code>&lt;leader&gt;ss</code></td><td>Fuzzy spelling suggestions</td></tr>
+<tr><td><code>zg</code></td><td>Add word to spell file</td></tr>
+<tr><td><code>zw</code></td><td>Mark word as wrong</td></tr>
+</tbody></table></div>
+</section>
+<section class="doc-section" data-section="saving, quitting, and recovery">
+<div class="section-kicker">17</div>
+<h2 id="saving-quitting-and-recovery"><a class="heading-anchor" href="#saving-quitting-and-recovery" aria-label="Link to Saving, quitting, and recovery">Saving, quitting, and recovery</a></h2>
+<div class="table-wrap"><table>
+<thead><tr><th scope="col">Command / keys</th><th scope="col">Action</th></tr></thead>
+<tbody>
+<tr><td><code>:w</code> or <code>&lt;C-s&gt;</code></td><td>Save</td></tr>
+<tr><td><code>:q</code></td><td>Close window</td></tr>
+<tr><td><code>:wq</code> or <code>ZZ</code></td><td>Save and close</td></tr>
+<tr><td><code>:q!</code> or <code>ZQ</code></td><td>Close and discard unsaved changes</td></tr>
+<tr><td><code>:qa</code></td><td>Close all windows</td></tr>
+<tr><td><code>:qa!</code></td><td>Close everything and discard unsaved changes</td></tr>
+<tr><td><code>:e!</code></td><td>Reload current file and discard unsaved changes</td></tr>
+<tr><td><code>&lt;leader&gt;so</code></td><td>Reload <code>init.lua</code></td></tr>
+</tbody></table></div>
+<p>Persistent undo is enabled, so undo history normally survives closing and reopening a file. Swap files are disabled.</p>
+</section>
+<section class="doc-section" data-section="help and self-discovery">
+<div class="section-kicker">18</div>
+<h2 id="help-and-self-discovery"><a class="heading-anchor" href="#help-and-self-discovery" aria-label="Link to Help and self-discovery">Help and self-discovery</a></h2>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim">:help topic
+:help gd
+:help :terminal
+:help telescope
+:Telescope keymaps
+:Telescope commands
+:map
+:nmap &lt;leader&gt;
+:messages
+:checkhealth</code></pre>
+</div>
+<p>Press <code>&lt;C-]&gt;</code> on a help link to follow it and <code>&lt;C-o&gt;</code> to go back. The most useful meta-skill in Neovim is learning to ask <code>:help</code> about the key or command currently in front of you.</p>
+</section>
+<section class="doc-section" data-section="config and plugin maintenance">
+<div class="section-kicker">19</div>
+<h2 id="config-and-plugin-maintenance"><a class="heading-anchor" href="#config-and-plugin-maintenance" aria-label="Link to Config and plugin maintenance">Config and plugin maintenance</a></h2>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim"># Open the active config from the shell.
+nvim ~/.config/nvim/init.lua</code></pre>
+</div>
+<p>Inside Neovim:</p>
+<div class="code-card">
+<div class="code-toolbar">
+<span class="code-language">Neovim</span>
+<button class="copy-button" type="button">Copy</button>
+</div>
+<pre><code class="language-vim">&quot; Reload the config after editing it.
+&lt;leader&gt;so
+
+&quot; Ask native vim.pack to check and interactively update plugins.
+:lua vim.pack.update()
+
+&quot; Inspect external tools managed for Neovim.
+:Mason</code></pre>
+</div>
+<p>The plugin lock file is <code>~/.config/nvim/nvim-pack-lock.json</code>.</p>
+</section>
+<section class="doc-section" data-section="current gaps and sharp edges">
+<div class="section-kicker">20</div>
+<h2 id="current-gaps-and-sharp-edges"><a class="heading-anchor" href="#current-gaps-and-sharp-edges" aria-label="Link to Current gaps and sharp edges">Current gaps and sharp edges</a></h2>
+<p>These are the main differences still standing between this setup and a comfortable Rider replacement:</p>
+<ol><li><strong>No debugger:</strong> there is no DAP client, .NET debug adapter, breakpoint UI, or debug keymap.</li><li><strong>No run/build workflow:</strong> builds and app launches are still terminal commands, with no compiler-output quickfix integration.</li><li><strong>C# tests only:</strong> Neotest has VSTest, but no JS/TS test adapter and no test debugging.</li><li><strong>One key collision:</strong> <code>&lt;leader&gt;ts</code> means Neotest summary, not task search.</li><li><strong>Two file explorers:</strong> Snacks gives a conventional tree; Oil treats a directory as editable text. Both are useful, but choosing one primary mental model will make the setup easier to learn.</li><li><strong>No key-hint popup:</strong> there is no which-key-style leader menu, so use this sheet or <code>:Telescope keymaps</code>.</li><li><strong>No format-on-save:</strong> formatting is deliberately triggered with <code>&lt;leader&gt;f</code>.</li></ol>
+<p>The strongest existing path is already <strong>editing + navigation + LSP + C# tests + Git</strong>. Debugging and repeatable run/build commands are the largest remaining Rider-shaped holes.</p>
+</section>
+        <div class="empty-state" id="emptyState">
+          <strong>No matching sections.</strong><br>
+          Try a key, command, plugin, or Rider action.
+        </div>
+      </article>
+
+      <footer>
+        Generated from nvim-cheatsheet.md · Active config: ~/.config/nvim/init.lua
+      </footer>
+    </main>
+  </div>
+
+  <button class="icon-button back-to-top" id="backToTop" type="button" aria-label="Back to top">↑</button>
+
+  <script>
+    const root = document.documentElement;
+    const themeButton = document.getElementById("themeButton");
+    const printButton = document.getElementById("printButton");
+    const menuButton = document.getElementById("menuButton");
+    const sidebar = document.getElementById("sidebar");
+    const search = document.getElementById("search");
+    const searchStatus = document.getElementById("searchStatus");
+    const emptyState = document.getElementById("emptyState");
+    const sections = [...document.querySelectorAll(".doc-section")];
+    const tocLinks = [...document.querySelectorAll(".toc a")];
+    const progress = document.getElementById("progress");
+    const backToTop = document.getElementById("backToTop");
+
+    function currentTheme() {
+      return root.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    }
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      themeButton.textContent = theme === "dark" ? "☀" : "☾";
+      themeButton.setAttribute("aria-label", theme === "dark" ? "Use light theme" : "Use dark theme");
+      try { localStorage.setItem("nvim-cheatsheet-theme", theme); } catch {}
+    }
+
+    setTheme(currentTheme());
+    themeButton.addEventListener("click", () => setTheme(currentTheme() === "dark" ? "light" : "dark"));
+    printButton.addEventListener("click", () => window.print());
+
+    function setMenu(open) {
+      sidebar.classList.toggle("open", open);
+      menuButton.setAttribute("aria-expanded", String(open));
+      menuButton.setAttribute("aria-label", open ? "Close table of contents" : "Open table of contents");
+    }
+
+    menuButton.addEventListener("click", () => setMenu(!sidebar.classList.contains("open")));
+    tocLinks.forEach((link) => link.addEventListener("click", () => setMenu(false)));
+
+    document.addEventListener("click", (event) => {
+      if (
+        innerWidth <= 900 &&
+        sidebar.classList.contains("open") &&
+        !sidebar.contains(event.target) &&
+        !menuButton.contains(event.target)
+      ) {
+        setMenu(false);
+      }
+    });
+
+    function applySearch() {
+      const query = search.value.trim().toLowerCase();
+      let visibleCount = 0;
+      sections.forEach((section) => {
+        const visible = !query || section.textContent.toLowerCase().includes(query);
+        section.hidden = !visible;
+        if (visible) visibleCount += 1;
+      });
+
+      tocLinks.forEach((link) => {
+        const section = document.getElementById(link.dataset.target)?.closest(".doc-section");
+        link.closest("li").hidden = Boolean(section?.hidden);
+      });
+
+      emptyState.classList.toggle("visible", visibleCount === 0);
+      searchStatus.textContent = query
+        ? `${visibleCount} of ${sections.length} sections`
+        : `${sections.length} sections`;
+    }
+
+    search.addEventListener("input", applySearch);
+    applySearch();
+
+    document.addEventListener("keydown", (event) => {
+      const typing = /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+      if (event.key === "/" && !typing) {
+        event.preventDefault();
+        search.focus();
+      }
+      if (event.key === "Escape") {
+        if (search.value) {
+          search.value = "";
+          applySearch();
+        }
+        search.blur();
+        setMenu(false);
+      }
+    });
+
+    async function copyText(text) {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.append(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+
+    document.querySelectorAll(".copy-button").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const code = button.closest(".code-card").querySelector("code").textContent;
+        try {
+          await copyText(code);
+          button.textContent = "Copied";
+        } catch {
+          button.textContent = "Select & copy";
+        }
+        setTimeout(() => { button.textContent = "Copy"; }, 1400);
+      });
+    });
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (!visible) return;
+        const id = visible.target.querySelector("h2")?.id;
+        tocLinks.forEach((link) => link.classList.toggle("active", link.dataset.target === id));
+      },
+      { rootMargin: "-18% 0px -68% 0px" },
+    );
+    sections.forEach((section) => observer.observe(section));
+
+    function updateScrollUi() {
+      const scrollRange = document.documentElement.scrollHeight - innerHeight;
+      const ratio = scrollRange > 0 ? scrollY / scrollRange : 0;
+      progress.style.width = `${Math.min(100, Math.max(0, ratio * 100))}%`;
+      backToTop.classList.toggle("visible", scrollY > 700);
+    }
+
+    addEventListener("scroll", updateScrollUi, { passive: true });
+    addEventListener("resize", updateScrollUi);
+    backToTop.addEventListener("click", () => scrollTo({ top: 0, behavior: "smooth" }));
+    updateScrollUi();
+  </script>
+</body>
+</html>
