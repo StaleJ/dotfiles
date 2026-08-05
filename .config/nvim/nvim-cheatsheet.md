@@ -403,36 +403,11 @@ In the Fugitive status buffer:
 The shell alias `lg` launches Lazygit. From Neovim, use `:terminal lg`, or run
 `lg` in a separate terminal pane.
 
-## Personal tasks and Obsidian
-
-The configured Obsidian vault is `~/Babel`.
+## Code TODOs
 
 | Keys | Action |
 |---|---|
-| `<leader>tt` | Open long-running tasks (`~/Babel/Tasks.md`) |
-| `<leader>ti` | Open task inbox (`~/Babel/Inbox.md`) |
-| `<leader>ta` | Create a section in the inbox |
-| `<leader>tA` | Create a section in long-running tasks |
 | `<leader>tc` | Search code TODO/FIXME comments |
-| `<leader>tx` | Toggle the Markdown checkbox under the cursor |
-
-Task commands:
-
-```vim
-:TaskCapture
-:TaskCapture Buy milk
-:TaskCaptureLong
-:TaskCaptureLong Investigate new architecture
-:TaskSection
-:TaskSectionLong
-:TaskSearch
-:TaskInbox
-:TaskLong
-```
-
-Important: `<leader>ts` was assigned to task search earlier in the config, but
-the later Neotest mapping overwrites it. Its effective action is **toggle test
-summary**. Use `:TaskSearch` to search unchecked vault tasks.
 
 ## Terminal and external commands
 
@@ -559,13 +534,12 @@ comfortable Rider replacement:
    commands, with no compiler-output quickfix integration.
 3. **C# tests only:** Neotest has VSTest, but no JS/TS test adapter and no test
    debugging.
-4. **One key collision:** `<leader>ts` means Neotest summary, not task search.
-5. **Two file explorers:** Snacks gives a conventional tree; Oil treats a
+4. **Two file explorers:** Snacks gives a conventional tree; Oil treats a
    directory as editable text. Both are useful, but choosing one primary mental
    model will make the setup easier to learn.
-6. **No key-hint popup:** there is no which-key-style leader menu, so use this
+5. **No key-hint popup:** there is no which-key-style leader menu, so use this
    sheet or `:Telescope keymaps`.
-7. **No format-on-save:** formatting is deliberately triggered with
+6. **No format-on-save:** formatting is deliberately triggered with
    `<leader>f`.
 
 The strongest existing path is already **editing + navigation + LSP + C# tests
